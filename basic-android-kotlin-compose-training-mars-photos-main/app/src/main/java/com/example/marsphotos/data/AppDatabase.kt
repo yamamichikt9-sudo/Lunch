@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.marsphotos.LunchDao
+import com.example.marsphotos.data.LunchDao
 
 // データベースの設定：保存するデータの種類（Entity）を指定します
 @Database(entities = [LunchEntity::class], version = 1, exportSchema = false)

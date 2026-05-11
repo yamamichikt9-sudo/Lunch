@@ -35,8 +35,4 @@ interface LunchDao {
     // :category と ORDER BY の間に必ず半角スペースを入れてください
     @Query("SELECT * FROM lunch_table WHERE category = :category ORDER BY `date` DESC")
     fun getLunchesByCategory(category: String): Flow<List<LunchEntity>>
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 9caefa2e9dcb51a40837bdcd5036b5575797530f
