@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import androidx.room.Delete
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LunchDao {
@@ -24,5 +25,7 @@ interface LunchDao {
     // 削除
     @Delete
     suspend fun deleteLunch(lunch: LunchEntity)
+
+    @Query("SELECT * FROM lunch_table WHERE category = :category ORDER BY date DESC")
+    fun getLunchesByCategory(category: String): Flow<List<LunchEntity>>
 }
-//ddddddddddd
