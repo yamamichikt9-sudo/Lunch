@@ -1,9 +1,8 @@
 package com.example.marsphotos.data
 
-import LunchEntity
+import com.example.marsphotos.data.LunchEntity
 // もし LunchDao が同じパッケージにあるなら下の import は不要です
 // 違う場所にあるなら正しいパスを指定してください
-import com.example.marsphotos.data.LunchDao
 import kotlinx.coroutines.flow.Flow // ← これがないと Flow でエラーが出ます
 
 class LunchesRepository(private val lunchDao: LunchDao) {
