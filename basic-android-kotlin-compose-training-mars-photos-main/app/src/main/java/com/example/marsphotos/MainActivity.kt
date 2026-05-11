@@ -34,7 +34,8 @@ import androidx.compose.runtime.remember
 import com.example.marsphotos.ui.AddLunchScreen
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-
+import androidx.lifecycle.viewmodel.compose.viewModel // viewModel()を使うため
+import com.example.marsphotos.ui.screens.LunchViewModel // あなたが作ったViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,7 +59,8 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     } else {
-                        AddLunchScreen()
+                        val lunchViewModel: LunchViewModel = viewModel() // 1. まず変数を作る
+                        AddLunchScreen(viewModel = lunchViewModel)       // 2. 小文字で渡す
                     }
                 }
             }
