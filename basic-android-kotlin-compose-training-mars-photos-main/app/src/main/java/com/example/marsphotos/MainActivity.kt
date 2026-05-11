@@ -41,6 +41,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-//ddddddd
-//pppppp
