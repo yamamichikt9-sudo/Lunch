@@ -1,19 +1,3 @@
-/*
-* Copyright (C) 2023 The Android Open Source Project
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      https://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -49,11 +33,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        // Kotlin 2.1系を使う場合は Java 17 推奨
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -66,6 +51,9 @@ android {
 }
 
 dependencies {
+    // Room のバージョンを Kotlin 2.1 対応版に引き上げ
+    // (2.6.1 だと Metadata 2.1.0 が読めないため)
+    val room_version = "2.7.0-alpha12"
 
     // Import the Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
@@ -77,15 +65,15 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
-    // Retrofit
+    // Retrofit & Serialization
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 
+    // Testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
-
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
@@ -94,10 +82,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
-    val room_version = "2.6.1"
+    // Room
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
-
-    // Kotlinを使っている場合、これを一番下などに追加
     kapt("androidx.room:room-compiler:$room_version")
 }
