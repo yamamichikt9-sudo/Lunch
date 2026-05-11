@@ -15,17 +15,22 @@
  */
 package com.example.marsphotos.data
 
+import android.content.Context
 import com.example.marsphotos.network.MarsApiService
 import retrofit2.Retrofit
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import androidx.room.Room
+import com.example.marsphotos.data.AppDatabase
+import com.example.marsphotos.data.LunchesRepository
 
 /**
  * Dependency Injection container at the application level.
  */
 interface AppContainer {
     val marsPhotosRepository: MarsPhotosRepository
+    val lunchesRepository: LunchesRepository
 }
 
 /**
@@ -33,7 +38,7 @@ interface AppContainer {
  *
  * Variables are initialized lazily and the same instance is shared across the whole app.
  */
-class DefaultAppContainer : AppContainer {
+class DefaultAppContainer(private val context: Context) : AppContainer {
     private val baseUrl = "https://android-kotlin-fun-mars-server.appspot.com/"
 
     /**
@@ -54,7 +59,7 @@ class DefaultAppContainer : AppContainer {
     /**
      * DI implementation for Mars photos repository
      */
-    override val marsPhotosRepository: MarsPhotosRepository by lazy {
-        NetworkMarsPhotosRepository(retrofitService)
+    override val lunchesRepository: LunchesRepository by lazy {
+        LunchesRepository(AppDatabase.getDatabase(context).lunchDao())
     }
 }
