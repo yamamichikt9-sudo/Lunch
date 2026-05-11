@@ -10,4 +10,8 @@ class LunchesRepository(private val lunchDao: LunchDao) {
 
     // 保存
     suspend fun insertLunch(lunch: LunchEntity) = lunchDao.insertLunch(lunch)
+
+    fun getLunchesByCategory(category: String): List<LunchEntity> {
+        return lunchDao.getLunchesByCategory(category)
+    }
 }

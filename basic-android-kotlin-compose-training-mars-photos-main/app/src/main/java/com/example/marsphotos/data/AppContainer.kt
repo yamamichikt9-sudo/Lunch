@@ -41,23 +41,25 @@ interface AppContainer {
 class DefaultAppContainer(private val context: Context) : AppContainer {
     private val baseUrl = "https://android-kotlin-fun-mars-server.appspot.com/"
 
-    /**
-     * Use the Retrofit builder to build a retrofit object using a kotlinx.serialization converter
-     */
     private val retrofit: Retrofit = Retrofit.Builder()
         .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
         .baseUrl(baseUrl)
         .build()
 
-    /**
-     * Retrofit service object for creating api calls
-     */
     private val retrofitService: MarsApiService by lazy {
         retrofit.create(MarsApiService::class.java)
     }
 
     /**
-     * DI implementation for Mars photos repository
+     * 【重要】これが抜けていました！
+     * 元々あった MarsPhotos 用のリポジトリの実装です
+     */
+    override val marsPhotosRepository: MarsPhotosRepository by lazy {
+        NetworkMarsPhotosRepository(retrofitService)
+    }
+
+    /**
+     * あなたが追加したランチ用リポジトリ
      */
     override val lunchesRepository: LunchesRepository by lazy {
         LunchesRepository(AppDatabase.getDatabase(context).lunchDao())
