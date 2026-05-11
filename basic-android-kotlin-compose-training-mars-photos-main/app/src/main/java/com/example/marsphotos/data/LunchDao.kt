@@ -1,5 +1,8 @@
 package com.example.marsphotos.data
 
+<<<<<<< HEAD
+//ddddddddddd
+=======
 import LunchEntity
 import androidx.room.Dao
 import androidx.room.Insert
@@ -29,3 +32,4 @@ interface LunchDao {
     @Query("SELECT * FROM lunch_table WHERE category = :category ORDER BY date DESC")
     fun getLunchesByCategory(category: String): Flow<List<LunchEntity>>
 }
+>>>>>>> 374ae4ef6e1cab32798f2bfffb191b1682dcc4c0

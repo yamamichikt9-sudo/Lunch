@@ -1,7 +1,7 @@
 package com.example.marsphotos.data
 
 import LunchEntity
-import kotlinx.coroutines.flow.Flow
+import com.example.marsphotos.LunchDao
 
 class LunchesRepository(private val lunchDao: LunchDao) {
 
