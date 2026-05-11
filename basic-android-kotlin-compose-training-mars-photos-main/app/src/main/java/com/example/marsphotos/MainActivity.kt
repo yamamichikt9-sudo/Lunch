@@ -25,10 +25,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.marsphotos.ui.MarsPhotosApp
 import com.example.marsphotos.ui.theme.MarsPhotosTheme
+import androidx.compose.runtime.remember
+import com.example.marsphotos.ui.AddLunchScreen
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,13 +43,22 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MarsPhotosTheme {
+                var currentScreen by remember { mutableStateOf("main") }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Button(onClick = { }) {
-                            Text(text = "ランチを登録")
+                    if (currentScreen == "main") {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Button(onClick = { currentScreen = "add" }) {
+                                Text(text = "ランチを登録")
+                            }
                         }
+                    } else {
+                        AddLunchScreen()
                     }
                 }
             }
