@@ -100,4 +100,6 @@ dependencies {
 
     // Kotlinを使っている場合、これを一番下などに追加
     kapt("androidx.room:room-compiler:$room_version")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+
 }

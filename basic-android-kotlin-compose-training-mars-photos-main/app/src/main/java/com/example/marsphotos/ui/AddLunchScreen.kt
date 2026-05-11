@@ -1,5 +1,6 @@
 package com.example.marsphotos.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,16 +13,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberAsyncImagePainter
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLunchScreen() {
-    var expanded by remember { mutableStateOf(false) } // メニューが開いているか
-    var selectedGenre by remember { mutableStateOf("選択してください") } // 選ばれた項目
+    var expanded by remember { mutableStateOf(false) }
+    var selectedGenre by remember { mutableStateOf("選択してください") }
     val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
     var shopName by remember { mutableStateOf("") }
     var comment by remember { mutableStateOf("") }
-    var rating by remember { mutableStateOf(0) }
+    var rating by remember { mutableIntStateOf(0) }
+
+    val selectedImageUri = remember { mutableStateOf<android.net.Uri?>(null) }
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        selectedImageUri.value = uri
+    }
 
     Column(
         modifier = Modifier
@@ -32,82 +41,91 @@ fun AddLunchScreen() {
     ) {
         Text(text = "ランチ登録", style = MaterialTheme.typography.headlineMedium)
 
-        Button(
-            onClick = {},
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Text("写真選択")
+        // 1. 写真選択
+        if (selectedImageUri.value == null) {
+            Button(
+                onClick = { launcher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth().height(150.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("写真選択")
+            }
+        } else {
+            Image(
+                painter = rememberAsyncImagePainter(selectedImageUri.value),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(200.dp).clickable { launcher.launch("image/*") }
+            )
         }
-    }
 
-    OutlinedTextField(
-        value = shopName,
-        onValueChange = { shopName = it },
-        label = { Text("店名") },
-        modifier = Modifier.fillMaxWidth()
-    )
-
-    Text("")
-    @OptIn(ExperimentalMaterial3Api::class)
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = Modifier.fillMaxWidth()
-    ) {
+        // 2. 店名入力
         OutlinedTextField(
-            value = selectedGenre,
-            onValueChange = {},
-            readOnly = true, // キーボード入力を禁止
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor(),
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+            value = shopName,
+            onValueChange = { shopName = it },
+            label = { Text("店名") },
+            modifier = Modifier.fillMaxWidth()
         )
-        ExposedDropdownMenu(
+
+        // 3. ジャンル選択
+        ExposedDropdownMenuBox(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            genres.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(item) },
-                    onClick = {
-                        selectedGenre = item
-                        expanded = false
-                    }
+            OutlinedTextField(
+                value = selectedGenre,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("ジャンル") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier.menuAnchor(),
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                genres.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(item) },
+                        onClick = {
+                            selectedGenre = item
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // 4. 評価
+        Text("評価")
+        Row {
+            for (i in 1..5) {
+                Icon(
+                    imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
+                    contentDescription = null,
+                    tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { rating = i }
                 )
             }
         }
-    }
 
+        // 5. コメント
+        OutlinedTextField(
+            value = comment,
+            onValueChange = { comment = it },
+            label = { Text("コメント") },
+            modifier = Modifier.fillMaxWidth().height(120.dp)
+        )
 
-    Text("評価")
-    Row {
-        for (i in 1..5) {
-            Icon(
-                imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
-                contentDescription = null,
-                tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clickable { rating = i }
-            )
+        // 6. 登録ボタン
+        Button(
+            onClick = { },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("この内容で登録")
         }
     }
-
-    OutlinedTextField(
-        value = comment,
-        onValueChange = { comment = it },
-        label = { Text("コメント") },
-        modifier = Modifier.fillMaxWidth().height(120.dp)
-    )
-
-    Button(
-        onClick = { },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text("この内容で登録")
-    }
 }
-
