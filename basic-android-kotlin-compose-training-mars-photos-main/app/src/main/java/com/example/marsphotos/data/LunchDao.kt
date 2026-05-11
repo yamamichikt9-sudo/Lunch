@@ -11,9 +11,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface LunchDao {
     // 全データを取得（新しい順）
+    // LunchDao.kt
     @Query("SELECT * FROM lunch_table ORDER BY date DESC")
-    fun getAllLunches(): List<LunchEntity>
-
+    fun getAllLunches(): Flow<List<LunchEntity>> // ← ここが Flow<List<...>> になっていますか？
     // 新規保存
     @Insert
     suspend fun insertLunch(lunch: LunchEntity)

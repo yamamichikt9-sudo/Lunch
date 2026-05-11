@@ -3,15 +3,17 @@ package com.example.marsphotos.data
 import LunchEntity
 import kotlinx.coroutines.flow.Flow
 
-// ロジック担当が使いやすいように整える
 class LunchesRepository(private val lunchDao: LunchDao) {
-    // 全データ取得（リアルタイムに画面を更新できるようFlowを使うのが一般的です）
-    fun getAllLunchesStream(): List<LunchEntity> = lunchDao.getAllLunches()
 
-    // 保存
-    suspend fun insertLunch(lunch: LunchEntity) = lunchDao.insertLunch(lunch)
+    // 1. 全データ取得 (戻り値をFlowにする)
+    fun getAllLunchesStream(): Flow<List<LunchEntity>> = lunchDao.getAllLunches()
 
-    fun getLunchesByCategory(category: String): List<LunchEntity> {
+    // 2. ジャンル絞り込み (ここがエラーの箇所)
+    // 戻り値を Flow<List<LunchEntity>> に変更します
+    fun getLunchesByCategoryStream(category: String): Flow<List<LunchEntity>> {
         return lunchDao.getLunchesByCategory(category)
     }
+
+    // 3. 保存
+    suspend fun insertLunch(lunch: LunchEntity) = lunchDao.insertLunch(lunch)
 }
