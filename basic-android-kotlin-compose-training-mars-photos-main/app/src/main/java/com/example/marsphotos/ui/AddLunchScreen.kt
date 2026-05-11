@@ -16,6 +16,9 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun AddLunchScreen() {
+    var expanded by remember { mutableStateOf(false) } // メニューが開いているか
+    var selectedGenre by remember { mutableStateOf("選択してください") } // 選ばれた項目
+    val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
     var shopName by remember { mutableStateOf("") }
     var comment by remember { mutableStateOf("") }
     var rating by remember { mutableStateOf(0) }
@@ -46,6 +49,38 @@ fun AddLunchScreen() {
         label = { Text("店名") },
         modifier = Modifier.fillMaxWidth()
     )
+
+    Text("")
+    @OptIn(ExperimentalMaterial3Api::class)
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = selectedGenre,
+            onValueChange = {},
+            readOnly = true, // キーボード入力を禁止
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor(),
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            genres.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(item) },
+                    onClick = {
+                        selectedGenre = item
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+
 
     Text("評価")
     Row {
