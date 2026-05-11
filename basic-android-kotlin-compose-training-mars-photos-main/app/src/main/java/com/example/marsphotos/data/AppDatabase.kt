@@ -4,13 +4,11 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-<<<<<<< HEAD
 // もし LunchDao が同じフォルダ(package com.example.marsphotos.data)なら
 // インポートは不要、または以下になります
 // import com.example.marsphotos.data.LunchDao
-=======
 import com.example.marsphotos.data.LunchDao
->>>>>>> 53ac958c4c2be4a2943b73e4f147fe594ec247d5
+
 
 @Database(entities = [LunchEntity::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {

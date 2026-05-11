@@ -12,10 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.marsphotos.ui.screens.LunchViewModel
 
 
 @Composable
-fun AddLunchScreen() {
+fun AddLunchScreen(viewModel: LunchViewModel) {
     var expanded by remember { mutableStateOf(false) } // メニューが開いているか
     var selectedGenre by remember { mutableStateOf("選択してください") } // 選ばれた項目
     val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
@@ -44,8 +45,8 @@ fun AddLunchScreen() {
     }
 
     OutlinedTextField(
-        value = shopName,
-        onValueChange = { shopName = it },
+        value = viewModel.nameInput, // UI担当の変数ではなく、あなたのViewModelの変数を使う
+        onValueChange = { viewModel.updateName(it) }, // 文字が変わったらViewModelに報告する
         label = { Text("店名") },
         modifier = Modifier.fillMaxWidth()
     )
