@@ -1,17 +1,23 @@
 package com.example.marsphotos.data
 
 import LunchEntity
-import com.example.marsphotos.LunchDao
+// もし LunchDao が同じパッケージにあるなら下の import は不要です
+// 違う場所にあるなら正しいパスを指定してください
+import com.example.marsphotos.data.LunchDao
+import kotlinx.coroutines.flow.Flow // ← これがないと Flow でエラーが出ます
 
-// ロジック担当が使いやすいように整える
 class LunchesRepository(private val lunchDao: LunchDao) {
-    // 全データ取得（リアルタイムに画面を更新できるようFlowを使うのが一般的です）
-    fun getAllLunchesStream(): List<LunchEntity> = lunchDao.getAllLunches()
 
-    // 保存
-    suspend fun insertLunch(lunch: LunchEntity) = lunchDao.insertLunch(lunch)
+    // 1. 全データ取得
+    fun getAllLunchesStream(): Flow<List<LunchEntity>> = lunchDao.getAllLunches()
 
-    fun getLunchesByCategory(category: String): List<LunchEntity> {
+    // 2. ジャンル絞り込み
+    fun getLunchesByCategoryStream(category: String): Flow<List<LunchEntity>> {
         return lunchDao.getLunchesByCategory(category)
+    }
+
+    // 3. 保存
+    suspend fun insertLunch(lunch: LunchEntity) {
+        lunchDao.insertLunch(lunch)
     }
 }
