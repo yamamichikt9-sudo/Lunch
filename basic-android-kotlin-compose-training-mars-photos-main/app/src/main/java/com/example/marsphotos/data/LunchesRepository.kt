@@ -19,4 +19,14 @@ class LunchesRepository(private val lunchDao: LunchDao) {
     suspend fun insertLunch(lunch: LunchEntity) {
         lunchDao.insertLunch(lunch)
     }
+
+    // ランチ情報を消す
+    suspend fun deleteLunch(lunch: LunchEntity) {
+        lunchDao.deleteLunch(lunch)
+    }
+
+    //中身を書き換える
+    suspend fun updateLunch(lunch: LunchEntity) {
+        lunchDao.updateLunch(lunch)
+    }
 }
