@@ -41,6 +41,13 @@ class LunchViewModel(
                 phoneInput.all { it.isDigit() } &&
                 phoneInput.isNotBlank()
 
+    var phoneNumberInput by mutableStateOf("")
+        private set
+
+    fun updatePhoneNumber(input: String) {
+        phoneNumberInput = input
+    }
+
     // --- 3. UIからの更新用関数 ---
     fun updateName(newName: String) { nameInput = newName }
     fun updateAddress(newAddress: String) { addressInput = newAddress }
