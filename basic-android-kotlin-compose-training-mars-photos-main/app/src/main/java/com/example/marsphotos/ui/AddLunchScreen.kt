@@ -126,7 +126,7 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                             tint = if (i <= viewModel.ratingInput) Color(0xFFFFC107) else Color.Gray,
                             modifier = Modifier
                                 .size(40.dp)
-                                .clickable { viewModel.ratingInput = (i.toFloat()) }
+                                .clickable { viewModel.updateRating(i.toFloat()) }
                         )
                     }
                 }
@@ -142,6 +142,7 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                 // 6. 登録ボタン
                 Button(
                     onClick = {
+                        viewModel.saveLunch()
                         onBack()
                     },
                     enabled = viewModel.canSave, // OKな時だけ光る

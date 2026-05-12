@@ -4,21 +4,35 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
-import com.example.marsphotos.data.LunchEntity // 自分で作ったEntityをインポート
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.marsphotos.MarsPhotosApplication
+import com.example.marsphotos.data.LunchEntity
 import com.example.marsphotos.data.LunchesRepository
 import kotlinx.coroutines.launch
 
-class LunchViewModel : ViewModel() {
+class LunchViewModel(
+    private val lunchesRepository: LunchesRepository
+) : ViewModel() {
 
-    // --- 1. UIの状態管理（すべての入力項目を網羅） ---
+    // --- 1. UIの状態管理 ---
     var nameInput by mutableStateOf("")
+        private set
     var addressInput by mutableStateOf("")
+        private set
     var phoneInput by mutableStateOf("")
+        private set
     var selectedGenre by mutableStateOf("和食")
+        private set
     var ratingInput by mutableStateOf(0f)
+        private set
     var commentInput by mutableStateOf("")
+        private set
     var photoUriInput by mutableStateOf<String?>(null)
+        private set
 
     // --- 2. バリデーションロジック ---
     val canSave: Boolean
@@ -36,11 +50,10 @@ class LunchViewModel : ViewModel() {
     fun updateComment(newComment: String) { commentInput = newComment }
     fun updatePhoto(uri: String) { photoUriInput = uri }
 
-    // --- 4. 保存アクション（ロジックの核心） ---
+    // --- 4. 保存アクション ---
     fun saveLunch() {
-        if (!canSave) return // 念のためのガードロジック
+        if (!canSave) return
 
-        // UIのバラバラなデータを「LunchEntity」という1つの塊にまとめる（詰め替え作業）
         val newLunch = LunchEntity(
             name = nameInput,
             address = addressInput,
@@ -49,14 +62,24 @@ class LunchViewModel : ViewModel() {
             category = selectedGenre,
             comment = commentInput,
             photoUrl = photoUriInput ?: "",
-            date = System.currentTimeMillis() // 登録した瞬間の時刻を記録
+            date = System.currentTimeMillis()
         )
 
-        // 非同期処理（コルーチン）でデータベースへ保存を依頼する
         viewModelScope.launch {
-            // ここでデータ担当のRepositoryを呼ぶことになります！
-            // 例: lunchRepository.insertLunch(newLunch)
-            println("保存しました: $newLunch") // テスト用のログ
+            lunchesRepository.insertLunch(newLunch)
+            println("DBに保存しました: $newLunch")
+        }
+    }
+
+    // --- 5. 作成マニュアル（Factory） ---
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                // ここで MarsPhotosApplication を正しくキャスト
+                val application = (this[APPLICATION_KEY] as MarsPhotosApplication)
+                val repository = application.container.lunchesRepository
+                LunchViewModel(lunchesRepository = repository)
+            }
         }
     }
 }

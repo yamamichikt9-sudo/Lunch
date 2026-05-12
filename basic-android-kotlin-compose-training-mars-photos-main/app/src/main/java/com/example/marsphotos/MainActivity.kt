@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     } else {
-                        val lunchViewModel: LunchViewModel = viewModel()
+                        val lunchViewModel: LunchViewModel = viewModel(factory = LunchViewModel.Factory)
                         AddLunchScreen(
                             viewModel = lunchViewModel,
                             onBack = { currentScreen = "main" })
