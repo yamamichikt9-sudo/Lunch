@@ -20,15 +20,15 @@ import com.example.marsphotos.ui.screens.LunchViewModel
 @Composable
 
 fun AddLunchScreen(viewModel: LunchViewModel) {
-// UIの表示制御用の状態（これはUI側で持っていてもOKなものです）
+
     var expanded by remember { mutableStateOf(false) }
     val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
 
-    // 画像選択のランチャー
+
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
     ) { uri: android.net.Uri? ->
-        uri?.let { viewModel.updatePhoto(it.toString()) } // 選択されたらViewModelへ！
+        uri?.let { viewModel.updatePhoto(it.toString()) }
     }
 
     Column(
@@ -60,7 +60,7 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
             )
         }
 
-        // 2. 店名入力 (ViewModelとガッチャンコ！)
+        // 2. 店名入力
     OutlinedTextField(
         value = viewModel.nameInput, // UI担当の変数ではなく、あなたのViewModelの変数を使う
         onValueChange = { viewModel.updateName(it) }, // 文字が変わったらViewModelに報告する
@@ -68,7 +68,7 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
         modifier = Modifier.fillMaxWidth()
     )
 
-        // 3. ジャンル選択 (viewModelのselectedGenreを使います)
+        // 3. ジャンル選択
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
@@ -98,7 +98,7 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
             }
         }
 
-        // 4. 評価（星の数もViewModelで管理）
+        // 4. 評価
         Text("評価")
         Row {
             for (i in 1..5) {
