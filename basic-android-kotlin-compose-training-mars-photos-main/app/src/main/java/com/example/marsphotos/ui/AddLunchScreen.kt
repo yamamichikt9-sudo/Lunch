@@ -56,14 +56,6 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
                 Text(text = "ランチ登録", style = MaterialTheme.typography.headlineMedium)
 
                 // 1. 写真選択
@@ -160,4 +152,3 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
             }
         }
     }
-}

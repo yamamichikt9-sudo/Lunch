@@ -106,7 +106,9 @@ fun PhotosGridScreen(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(150.dp),
-        modifier = modifier.padding(horizontal = 4.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 4.dp),
         contentPadding = contentPadding,
     ) {
         items(items = photos, key = { photo -> photo.id }) { photo ->
