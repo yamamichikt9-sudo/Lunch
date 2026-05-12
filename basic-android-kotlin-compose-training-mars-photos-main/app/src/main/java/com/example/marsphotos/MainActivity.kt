@@ -59,8 +59,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     } else {
-                        val lunchViewModel: LunchViewModel = viewModel() // 1. まず変数を作る
-                        AddLunchScreen(viewModel = lunchViewModel)       // 2. 小文字で渡す
+                        val lunchViewModel: LunchViewModel = viewModel()
                     }
                 }
             }

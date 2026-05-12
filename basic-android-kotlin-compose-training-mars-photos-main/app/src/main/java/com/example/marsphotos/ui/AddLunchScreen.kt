@@ -13,23 +13,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-<<<<<<< HEAD
 import coil.compose.rememberAsyncImagePainter
-=======
 import com.example.marsphotos.ui.screens.LunchViewModel
->>>>>>> 1d458c0b4abb059fa29bdae283a740af389a0cc6
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-<<<<<<< HEAD
+
 fun AddLunchScreen() {
     var expanded by remember { mutableStateOf(false) }
     var selectedGenre by remember { mutableStateOf("選択してください") }
-=======
 fun AddLunchScreen(viewModel: LunchViewModel) {
     var expanded by remember { mutableStateOf(false) } // メニューが開いているか
     var selectedGenre by remember { mutableStateOf("選択してください") } // 選ばれた項目
->>>>>>> 1d458c0b4abb059fa29bdae283a740af389a0cc6
     val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
     var shopName by remember { mutableStateOf("") }
     var comment by remember { mutableStateOf("") }
@@ -68,9 +63,8 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
             )
         }
 
-<<<<<<< HEAD
         // 2. 店名入力
-=======
+
     OutlinedTextField(
         value = viewModel.nameInput, // UI担当の変数ではなく、あなたのViewModelの変数を使う
         onValueChange = { viewModel.updateName(it) }, // 文字が変わったらViewModelに報告する
@@ -85,7 +79,7 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
         onExpandedChange = { expanded = !expanded },
         modifier = Modifier.fillMaxWidth()
     ) {
->>>>>>> 1d458c0b4abb059fa29bdae283a740af389a0cc6
+
         OutlinedTextField(
             value = shopName,
             onValueChange = { shopName = it },
