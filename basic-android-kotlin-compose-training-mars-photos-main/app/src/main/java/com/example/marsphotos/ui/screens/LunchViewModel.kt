@@ -25,6 +25,18 @@ class LunchViewModel(
         private set
     var phoneInput by mutableStateOf("")
         private set
+    val lunchList = androidx.compose.runtime.mutableStateListOf<LunchEntity>()
+
+    init {
+        viewModelScope.launch {
+            // リポジトリからデータを取ってきてリストに反映させる
+            lunchesRepository.getAllLunchesStream().collect { items ->
+                lunchList.clear()
+                lunchList.addAll(items.reversed()) // 新しい順に並べる
+            }
+        }
+    }
+
     var selectedGenre by mutableStateOf("和食")
         private set
     var ratingInput by mutableStateOf(0f)
@@ -53,6 +65,16 @@ class LunchViewModel(
     fun updateComment(newComment: String) { commentInput = newComment }
     fun updatePhoto(uri: String) { photoUriInput = uri }
 
+    private fun resetInputs() {
+        nameInput = ""
+        addressInput = ""
+        phoneInput = ""
+        selectedGenre = "和食"
+        ratingInput = 0f
+        commentInput = ""
+        photoUriInput = null
+    }
+
     // --- 4. 保存アクション ---
     fun saveLunch() {
         if (!canSave) return
@@ -72,6 +94,8 @@ class LunchViewModel(
             lunchesRepository.insertLunch(newLunch)
             println("DBに保存しました: $newLunch")
         }
+
+        resetInputs()
     }
 
     // --- 5. 作成マニュアル（Factory） ---
