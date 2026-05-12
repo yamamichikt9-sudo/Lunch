@@ -60,10 +60,13 @@ class MainActivity : ComponentActivity() {
                         }
                     } else {
                         val lunchViewModel: LunchViewModel = viewModel()
-                        AddLunchScreen(viewModel= lunchViewModel)
+                        AddLunchScreen(
+                            viewModel = lunchViewModel,
+                            onBack = { currentScreen = "main" })
                     }
                 }
             }
         }
     }
 }
+
