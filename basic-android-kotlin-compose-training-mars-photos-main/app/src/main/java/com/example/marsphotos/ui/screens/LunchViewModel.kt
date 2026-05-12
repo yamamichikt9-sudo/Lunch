@@ -23,25 +23,8 @@ class LunchViewModel(
         private set
     var addressInput by mutableStateOf("")
         private set
-
-    // 変数名を統一（phoneInputを削除し、こちらに一本化）
     var phoneNumberInput by mutableStateOf("")
         private set
-<<<<<<< HEAD
-    val lunchList = androidx.compose.runtime.mutableStateListOf<LunchEntity>()
-
-    init {
-        viewModelScope.launch {
-            // リポジトリからデータを取ってきてリストに反映させる
-            lunchesRepository.getAllLunchesStream().collect { items ->
-                lunchList.clear()
-                lunchList.addAll(items.reversed()) // 新しい順に並べる
-            }
-        }
-    }
-=======
->>>>>>> 4937fbcc7817c188cd71fbc5af11b5b8f5a226bd
-
     var selectedGenre by mutableStateOf("和食")
         private set
     var ratingInput by mutableStateOf(0f)
@@ -51,20 +34,27 @@ class LunchViewModel(
     var photoUriInput by mutableStateOf<String?>(null)
         private set
 
-    // --- 2. バリデーションロジック ---
-    // 電話番号はここに含まれていないので、空でも保存可能です（任意項目）
+    // 表示用のリスト
+    val lunchList = androidx.compose.runtime.mutableStateListOf<LunchEntity>()
+
+    init {
+        viewModelScope.launch {
+            // リポジトリからデータを取得して反映
+            lunchesRepository.getAllLunchesStream().collect { items ->
+                lunchList.clear()
+                lunchList.addAll(items.reversed())
+            }
+        }
+    }
+
+    // --- 2. バリデーション ---
     val canSave: Boolean
         get() = nameInput.isNotBlank()
 
     // --- 3. UIからの更新用関数 ---
     fun updateName(newName: String) { nameInput = newName }
     fun updateAddress(newAddress: String) { addressInput = newAddress }
-
-    // UI側のコード（AddLunchScreen）の呼び出しもこれに合わせてください
-    fun updatePhoneNumber(input: String) {
-        phoneNumberInput = input
-    }
-
+    fun updatePhoneNumber(input: String) { phoneNumberInput = input }
     fun updateRating(newRating: Float) { ratingInput = newRating }
     fun updateGenre(newGenre: String) { selectedGenre = newGenre }
     fun updateComment(newComment: String) { commentInput = newComment }
@@ -73,21 +63,20 @@ class LunchViewModel(
     private fun resetInputs() {
         nameInput = ""
         addressInput = ""
-        phoneInput = ""
+        phoneNumberInput = ""
         selectedGenre = "和食"
         ratingInput = 0f
         commentInput = ""
         photoUriInput = null
     }
 
-    // --- 4. 保存アクション ---
+    // --- 4. アクション ---
+    // 保存
     fun saveLunch() {
         if (!canSave) return
-
         val newLunch = LunchEntity(
             name = nameInput,
             address = addressInput,
-            // Entityの引数名に合わせて、UIの入力値を渡す
             phoneNumber = phoneNumberInput,
             rating = ratingInput,
             category = selectedGenre,
@@ -95,16 +84,20 @@ class LunchViewModel(
             photoUrl = photoUriInput ?: "",
             date = System.currentTimeMillis()
         )
-
         viewModelScope.launch {
             lunchesRepository.insertLunch(newLunch)
-            println("DBに保存しました: $newLunch")
         }
-
         resetInputs()
     }
 
-    // --- 5. Factory (変更なし) ---
+    // ★削除機能を追加！
+    fun deleteLunch(lunch: LunchEntity) {
+        viewModelScope.launch {
+            lunchesRepository.deleteLunch(lunch)
+        }
+    }
+
+    // --- 5. Factory ---
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
