@@ -35,11 +35,14 @@ class LunchViewModel(
         private set
 
     // --- 2. バリデーションロジック ---
+    // 修正案：店名さえ入っていればOKにする
     val canSave: Boolean
-        get() = nameInput.isNotBlank() &&
-                photoUriInput != null &&
-                phoneInput.all { it.isDigit() } &&
-                phoneInput.isNotBlank()
+        get() = nameInput.isNotBlank()
+    /* 一旦他のチェックをコメントアウト
+    && photoUriInput != null &&
+    phoneInput.all { it.isDigit() } &&
+    phoneInput.isNotBlank()
+    */
 
     var phoneNumberInput by mutableStateOf("")
         private set
