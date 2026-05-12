@@ -6,9 +6,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.marsphotos.data.LunchEntity // 自分で作ったEntityをインポート
+import com.example.marsphotos.data.LunchesRepository
 import kotlinx.coroutines.launch
 
-class LunchViewModel : ViewModel() {
+class LunchViewModel(
+    private val lunchesRepository: LunchesRepository // 仲介役を連れてくる
+) : ViewModel() {
 
     // --- 1. UIの状態管理（すべての入力項目を網羅） ---
     var nameInput by mutableStateOf("")
