@@ -19,22 +19,16 @@ import com.example.marsphotos.ui.screens.LunchViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 
-fun AddLunchScreen() {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedGenre by remember { mutableStateOf("選択してください") }
 fun AddLunchScreen(viewModel: LunchViewModel) {
-    var expanded by remember { mutableStateOf(false) } // メニューが開いているか
-    var selectedGenre by remember { mutableStateOf("選択してください") } // 選ばれた項目
+// UIの表示制御用の状態（これはUI側で持っていてもOKなものです）
+    var expanded by remember { mutableStateOf(false) }
     val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
-    var shopName by remember { mutableStateOf("") }
-    var comment by remember { mutableStateOf("") }
-    var rating by remember { mutableIntStateOf(0) }
 
-    val selectedImageUri = remember { mutableStateOf<android.net.Uri?>(null) }
+    // 画像選択のランチャー
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
     ) { uri: android.net.Uri? ->
-        selectedImageUri.value = uri
+        uri?.let { viewModel.updatePhoto(it.toString()) } // 選択されたらViewModelへ！
     }
 
     Column(
@@ -47,7 +41,7 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
         Text(text = "ランチ登録", style = MaterialTheme.typography.headlineMedium)
 
         // 1. 写真選択
-        if (selectedImageUri.value == null) {
+        if (viewModel.photoUriInput == null) {
             Button(
                 onClick = { launcher.launch("image/*") },
                 modifier = Modifier.fillMaxWidth().height(150.dp),
@@ -57,14 +51,16 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
             }
         } else {
             Image(
-                painter = rememberAsyncImagePainter(selectedImageUri.value),
+                painter = rememberAsyncImagePainter(viewModel.photoUriInput),
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(200.dp).clickable { launcher.launch("image/*") }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clickable { launcher.launch("image/*") }
             )
         }
 
-        // 2. 店名入力
-
+        // 2. 店名入力 (ViewModelとガッチャンコ！)
     OutlinedTextField(
         value = viewModel.nameInput, // UI担当の変数ではなく、あなたのViewModelの変数を使う
         onValueChange = { viewModel.updateName(it) }, // 文字が変わったらViewModelに報告する
@@ -72,35 +68,19 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
         modifier = Modifier.fillMaxWidth()
     )
 
-    Text("")
-    @OptIn(ExperimentalMaterial3Api::class)
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-
-        OutlinedTextField(
-            value = shopName,
-            onValueChange = { shopName = it },
-            label = { Text("店名") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // 3. ジャンル選択
+        // 3. ジャンル選択 (viewModelのselectedGenreを使います)
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = selectedGenre,
+                value = viewModel.selectedGenre,
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("ジャンル") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor(),
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
             )
             ExposedDropdownMenu(
                 expanded = expanded,
@@ -110,7 +90,7 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
                     DropdownMenuItem(
                         text = { Text(item) },
                         onClick = {
-                            selectedGenre = item
+                            viewModel.updateGenre(item)
                             expanded = false
                         }
                     )
@@ -118,25 +98,25 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
             }
         }
 
-        // 4. 評価
+        // 4. 評価（星の数もViewModelで管理）
         Text("評価")
         Row {
             for (i in 1..5) {
                 Icon(
-                    imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
+                    imageVector = if (i <= viewModel.ratingInput) Icons.Filled.Star else Icons.Outlined.Star,
                     contentDescription = null,
-                    tint = if (i <= rating) Color(0xFFFFC107) else Color.Gray,
+                    tint = if (i <= viewModel.ratingInput) Color(0xFFFFC107) else Color.Gray,
                     modifier = Modifier
                         .size(40.dp)
-                        .clickable { rating = i }
+                        .clickable { viewModel.ratingInput = (i.toFloat()) }
                 )
             }
         }
 
         // 5. コメント
         OutlinedTextField(
-            value = comment,
-            onValueChange = { comment = it },
+            value = viewModel.commentInput,
+            onValueChange = { viewModel.updateComment(it) },
             label = { Text("コメント") },
             modifier = Modifier.fillMaxWidth().height(120.dp)
         )
@@ -144,6 +124,7 @@ fun AddLunchScreen(viewModel: LunchViewModel) {
         // 6. 登録ボタン
         Button(
             onClick = { },
+            enabled = viewModel.canSave, // OKな時だけ光る
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("この内容で登録")
