@@ -88,15 +88,13 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
-                    value = viewModel.phoneNumberInput,
-                    onValueChange = { viewModel.updatePhoneNumber(it) },
-                    label = { Text("電話番号 (任意)") }, // ラベルで任意であることを伝える
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("例: 090-0000-0000") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true // 1行のみにするのが一般的
-                )
+            OutlinedTextField(
+                value = viewModel.phoneNumberInput, // ViewModelの変数名
+                onValueChange = { viewModel.updatePhoneNumber(it) }, // ViewModelの関数名
+                label = { Text("電話番号 (任意)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
 
                 // 3. ジャンル選択
                 ExposedDropdownMenuBox(

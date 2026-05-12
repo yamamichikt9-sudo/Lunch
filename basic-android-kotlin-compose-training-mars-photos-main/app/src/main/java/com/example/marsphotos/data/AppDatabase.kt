@@ -10,7 +10,7 @@ import androidx.room.RoomDatabase
 import com.example.marsphotos.data.LunchDao
 
 
-@Database(entities = [LunchEntity::class], version = 1, exportSchema = false)
+@Database(entities = [LunchEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun lunchDao(): LunchDao // ここが赤くなくなればOK

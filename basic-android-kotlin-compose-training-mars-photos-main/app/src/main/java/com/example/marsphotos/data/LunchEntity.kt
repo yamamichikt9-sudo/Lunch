@@ -13,6 +13,7 @@ data class LunchEntity(
     val rating: Float,        // 5段階評価
     val comment: String,      // コメント
     val date: Long,           // 日付（ミリ秒）
-    val phoneNumber: String,  // 電話番号
+    val phoneNumber: String? = "",
     val category: String      // ジャンル
+
 )
