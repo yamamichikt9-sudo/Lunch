@@ -110,7 +110,7 @@ fun LunchCard(lunch: com.example.marsphotos.data.LunchEntity) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-            // 写真
+
             androidx.compose.foundation.Image(
                 painter = coil.compose.rememberAsyncImagePainter(lunch.photoUrl),
                 contentDescription = null,

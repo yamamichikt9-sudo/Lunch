@@ -18,7 +18,7 @@ class LunchViewModel(
     private val lunchesRepository: LunchesRepository
 ) : ViewModel() {
 
-    // --- 1. UIの状態管理 ---
+
     var nameInput by mutableStateOf("")
         private set
     var addressInput by mutableStateOf("")
@@ -34,12 +34,12 @@ class LunchViewModel(
     var photoUriInput by mutableStateOf<String?>(null)
         private set
 
-    // 表示用のリスト
+
     val lunchList = androidx.compose.runtime.mutableStateListOf<LunchEntity>()
 
     init {
         viewModelScope.launch {
-            // リポジトリからデータを取得して反映
+
             lunchesRepository.getAllLunchesStream().collect { items ->
                 lunchList.clear()
                 lunchList.addAll(items.reversed())
@@ -47,11 +47,11 @@ class LunchViewModel(
         }
     }
 
-    // --- 2. バリデーション ---
+
     val canSave: Boolean
         get() = nameInput.isNotBlank()
 
-    // --- 3. UIからの更新用関数 ---
+
     fun updateName(newName: String) { nameInput = newName }
     fun updateAddress(newAddress: String) { addressInput = newAddress }
     fun updatePhoneNumber(input: String) { phoneNumberInput = input }
@@ -70,8 +70,7 @@ class LunchViewModel(
         photoUriInput = null
     }
 
-    // --- 4. アクション ---
-    // 保存
+
     fun saveLunch() {
         if (!canSave) return
         val newLunch = LunchEntity(
@@ -90,14 +89,14 @@ class LunchViewModel(
         resetInputs()
     }
 
-    // ★削除機能を追加！
+
     fun deleteLunch(lunch: LunchEntity) {
         viewModelScope.launch {
             lunchesRepository.deleteLunch(lunch)
         }
     }
 
-    // --- 5. Factory ---
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
