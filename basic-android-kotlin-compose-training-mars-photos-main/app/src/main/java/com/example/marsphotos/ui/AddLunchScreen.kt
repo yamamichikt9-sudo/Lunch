@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.marsphotos.ui.screens.LunchViewModel
+import androidx.compose.ui.text.input.KeyboardType // インポートを忘れずに
+import androidx.compose.foundation.text.KeyboardOptions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +87,14 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                     label = { Text("店名") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+            OutlinedTextField(
+                value = viewModel.phoneNumberInput, // ViewModelの変数名
+                onValueChange = { viewModel.updatePhoneNumber(it) }, // ViewModelの関数名
+                label = { Text("電話番号 (任意)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
 
                 // 3. ジャンル選択
                 ExposedDropdownMenuBox(

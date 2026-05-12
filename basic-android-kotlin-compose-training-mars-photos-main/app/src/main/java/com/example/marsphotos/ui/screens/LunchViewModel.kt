@@ -23,8 +23,11 @@ class LunchViewModel(
         private set
     var addressInput by mutableStateOf("")
         private set
-    var phoneInput by mutableStateOf("")
+
+    // 変数名を統一（phoneInputを削除し、こちらに一本化）
+    var phoneNumberInput by mutableStateOf("")
         private set
+<<<<<<< HEAD
     val lunchList = androidx.compose.runtime.mutableStateListOf<LunchEntity>()
 
     init {
@@ -36,6 +39,8 @@ class LunchViewModel(
             }
         }
     }
+=======
+>>>>>>> 4937fbcc7817c188cd71fbc5af11b5b8f5a226bd
 
     var selectedGenre by mutableStateOf("和食")
         private set
@@ -47,19 +52,19 @@ class LunchViewModel(
         private set
 
     // --- 2. バリデーションロジック ---
-    // 修正案：店名さえ入っていればOKにする
+    // 電話番号はここに含まれていないので、空でも保存可能です（任意項目）
     val canSave: Boolean
         get() = nameInput.isNotBlank()
-    /* 一旦他のチェックをコメントアウト
-    && photoUriInput != null &&
-    phoneInput.all { it.isDigit() } &&
-    phoneInput.isNotBlank()
-    */
 
     // --- 3. UIからの更新用関数 ---
     fun updateName(newName: String) { nameInput = newName }
     fun updateAddress(newAddress: String) { addressInput = newAddress }
-    fun updatePhone(newPhone: String) { phoneInput = newPhone }
+
+    // UI側のコード（AddLunchScreen）の呼び出しもこれに合わせてください
+    fun updatePhoneNumber(input: String) {
+        phoneNumberInput = input
+    }
+
     fun updateRating(newRating: Float) { ratingInput = newRating }
     fun updateGenre(newGenre: String) { selectedGenre = newGenre }
     fun updateComment(newComment: String) { commentInput = newComment }
@@ -82,7 +87,8 @@ class LunchViewModel(
         val newLunch = LunchEntity(
             name = nameInput,
             address = addressInput,
-            phoneNumber = phoneInput,
+            // Entityの引数名に合わせて、UIの入力値を渡す
+            phoneNumber = phoneNumberInput,
             rating = ratingInput,
             category = selectedGenre,
             comment = commentInput,
@@ -98,11 +104,10 @@ class LunchViewModel(
         resetInputs()
     }
 
-    // --- 5. 作成マニュアル（Factory） ---
+    // --- 5. Factory (変更なし) ---
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                // ここで MarsPhotosApplication を正しくキャスト
                 val application = (this[APPLICATION_KEY] as MarsPhotosApplication)
                 val repository = application.container.lunchesRepository
                 LunchViewModel(lunchesRepository = repository)
