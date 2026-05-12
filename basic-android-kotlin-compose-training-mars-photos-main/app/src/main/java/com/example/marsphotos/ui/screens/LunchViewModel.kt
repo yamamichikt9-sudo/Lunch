@@ -9,9 +9,7 @@ import com.example.marsphotos.data.LunchEntity // 自分で作ったEntityをイ
 import com.example.marsphotos.data.LunchesRepository
 import kotlinx.coroutines.launch
 
-class LunchViewModel(
-    private val lunchesRepository: LunchesRepository // 仲介役を連れてくる
-) : ViewModel() {
+class LunchViewModel : ViewModel() {
 
     // --- 1. UIの状態管理（すべての入力項目を網羅） ---
     var nameInput by mutableStateOf("")
