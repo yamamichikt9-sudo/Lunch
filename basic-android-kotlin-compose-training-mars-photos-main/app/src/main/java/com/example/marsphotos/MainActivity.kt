@@ -16,6 +16,7 @@
 
 package com.example.marsphotos
 
+import android.R.attr.singleLine
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -68,6 +69,7 @@ class MainActivity : ComponentActivity() {
                                         Text("+", style = MaterialTheme.typography.headlineMedium)
                                     }
                                 }
+<<<<<<< HEAD
                             ) { innerPadding ->
                                 if (lunchViewModel.lunchList.isEmpty()) {
                                     Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
@@ -75,6 +77,34 @@ class MainActivity : ComponentActivity() {
                                             Text("ランチを登録してみよう！")
                                             Spacer(modifier = Modifier.height(16.dp))
                                             Button(onClick = { currentScreen = "add" }) { Text("ランチを登録") }
+=======
+                            } else {
+
+                                val categories = remember(lunchViewModel.lunchList.toList()) {
+                                    listOf("すべて") + lunchViewModel.lunchList.map { it.category }.distinct()
+
+                                }
+                                var currentCategory by remember { mutableStateOf("すべて") }
+                                var expanded by remember { mutableStateOf(false) }
+
+                                var searchQuery by remember { mutableStateOf("") }
+
+                                val filteredList =
+                                    remember(currentCategory, lunchViewModel.lunchList) {
+                                        val genreFiltered = if (currentCategory == "すべて") {
+                                            lunchViewModel.lunchList
+                                        } else {
+                                            lunchViewModel.lunchList.filter { it.category == currentCategory }
+>>>>>>> 8c33f5a6fbe944fdd95ef85ebcd3d719350bf76f
+                                        }
+
+                                        if (searchQuery.isBlank()) {
+                                            genreFiltered
+                                        } else {
+                                            genreFiltered.filter { lunch ->
+                                                lunch.name.contains(searchQuery, ignoreCase = true) ||
+                                                        lunch.comment.contains(searchQuery, ignoreCase = true)
+                                            }
                                         }
                                     }
                                 } else {
@@ -121,6 +151,7 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
                                     }
+<<<<<<< HEAD
                                 }
                             }
                         }
@@ -148,6 +179,26 @@ class MainActivity : ComponentActivity() {
                                             .fillMaxSize()
                                             .padding(innerPadding)
                                             .verticalScroll(rememberScrollState()) // 長い文章でもスクロールできるように
+=======
+
+
+                                    OutlinedTextField(
+                                        value = searchQuery,
+                                        onValueChange = { searchQuery = it },
+                                        label = { Text("キーワード検索") },
+                                        placeholder = { Text("店名やコメントを入力") },
+                                        singleLine = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    )
+
+
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+>>>>>>> 8c33f5a6fbe944fdd95ef85ebcd3d719350bf76f
                                     ) {
                                         // 1. 大きな写真
                                         Image(
@@ -252,4 +303,8 @@ fun LunchCard(
             }
         }
     }
+<<<<<<< HEAD
 }//
+=======
+}
+>>>>>>> 8c33f5a6fbe944fdd95ef85ebcd3d719350bf76f
