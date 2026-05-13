@@ -34,6 +34,8 @@ class LunchViewModel(
         private set
     var photoUriInput by mutableStateOf<String?>(null)
         private set
+    var selectedLunch by mutableStateOf<LunchEntity?>(null)
+        private set
 
     // --- データのリスト ---
     // 重複していた宣言を1つにまとめました
@@ -62,6 +64,16 @@ class LunchViewModel(
     fun updateGenre(newGenre: String) { selectedGenre = newGenre }
     fun updateComment(newComment: String) { commentInput = newComment }
     fun updatePhoto(uri: String) { photoUriInput = uri }
+
+    fun onLunchSelected(lunch: LunchEntity) {
+        selectedLunch = lunch
+        // ここで「画面を詳細へ切り替える」命令をUIに出す
+    }
+
+    // 詳細画面から戻るときなどに、選択を解除する関数
+    fun clearSelectedLunch() {
+        selectedLunch = null
+    }
 
     // 入力フィールドを空にする
     private fun resetInputs() {
