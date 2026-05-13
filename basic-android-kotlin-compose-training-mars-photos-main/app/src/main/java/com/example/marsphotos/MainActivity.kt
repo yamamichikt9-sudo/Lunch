@@ -144,6 +144,21 @@ fun MainContent(
                 label = { Text("キーワード検索") },
                 placeholder = { Text("店名やコメントを入力") },
                 singleLine = true,
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .clickable { searchQuery = "" }
+                        ) {
+                            Text(
+                                text = "×",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
