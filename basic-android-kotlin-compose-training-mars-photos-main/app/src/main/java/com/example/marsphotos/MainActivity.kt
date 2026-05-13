@@ -60,7 +60,8 @@ class MainActivity : ComponentActivity() {
                             } else {
 
                                 val categories = remember(lunchViewModel.lunchList.toList()) {
-                                    listOf("すべて") + lunchViewModel.lunchList.map { it.category }.distinct()
+                                    listOf("すべて") + lunchViewModel.lunchList.map { it.category }
+                                        .distinct()
                                 }
                                 var currentCategory by remember { mutableStateOf("すべて") }
                                 var expanded by remember { mutableStateOf(false) }
@@ -68,7 +69,11 @@ class MainActivity : ComponentActivity() {
                                 var searchQuery by remember { mutableStateOf("") }
 
                                 val filteredList =
-                                    remember(currentCategory, searchQuery, lunchViewModel.lunchList.toList()) {
+                                    remember(
+                                        currentCategory,
+                                        searchQuery,
+                                        lunchViewModel.lunchList.toList()
+                                    ) {
                                         val genreFiltered = if (currentCategory == "すべて") {
                                             lunchViewModel.lunchList
                                         } else {
@@ -79,8 +84,14 @@ class MainActivity : ComponentActivity() {
                                             genreFiltered
                                         } else {
                                             genreFiltered.filter { lunch ->
-                                                lunch.name.contains(searchQuery, ignoreCase = true) ||
-                                                        lunch.comment.contains(searchQuery, ignoreCase = true)
+                                                lunch.name.contains(
+                                                    searchQuery,
+                                                    ignoreCase = true
+                                                ) ||
+                                                        lunch.comment.contains(
+                                                            searchQuery,
+                                                            ignoreCase = true
+                                                        )
                                             }
                                         }
                                     }
@@ -127,7 +138,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
 
-                                    // エラーが絶対出ないように整理した検索バー
+
                                     OutlinedTextField(
                                         value = searchQuery,
                                         onValueChange = { searchQuery = it },
@@ -154,19 +165,34 @@ class MainActivity : ComponentActivity() {
                                             .padding(horizontal = 16.dp, vertical = 8.dp)
                                     )
 
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentPadding = PaddingValues(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                                    ) {
-                                        items(filteredList) { lunch ->
-                                            LunchCard(lunch = lunch)
+                                    if (filteredList.isEmpty()) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .weight(1f),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "条件に一致するランチログが見つかりませんでした",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = Color.Gray
+                                            )
+                                        }
+                                    } else {
+                                        LazyColumn(
+                                            modifier = Modifier.fillMaxSize().weight(1f),
+                                            contentPadding = PaddingValues(16.dp),
+                                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                            items(filteredList) { lunch ->
+                                                LunchCard(lunch = lunch)
+                                            }
                                         }
                                     }
                                 }
-
                             }
                         }
+
                     } else {
                         AddLunchScreen(
                             viewModel = lunchViewModel,
@@ -228,5 +254,3 @@ fun LunchCard(lunch: com.example.marsphotos.data.LunchEntity) {
         }
     }
 }
-
-//
