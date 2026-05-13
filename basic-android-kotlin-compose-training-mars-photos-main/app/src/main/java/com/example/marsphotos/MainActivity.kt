@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -60,7 +62,9 @@ class MainActivity : ComponentActivity() {
                         "detail" -> {
                             LunchDetailContent(
                                 viewModel = lunchViewModel,
-                                onBack = { currentScreen = "main" }
+                                onBack = { currentScreen = "main" },
+                                // ★ 編集ボタンが押された時の動きをここで渡す
+                                onEditClick = { currentScreen = "add" }
                             )
                         }
                     }
@@ -85,7 +89,6 @@ fun MainContent(
         listOf("すべて") + viewModel.lunchList.map { it.category }.distinct()
     }
 
-    // ジャンルとキーワードの両方でフィルタリング
     val filteredList = remember(currentCategory, searchQuery, viewModel.lunchList.toList()) {
         val genreFiltered = if (currentCategory == "すべて") {
             viewModel.lunchList
@@ -112,7 +115,6 @@ fun MainContent(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            // ジャンル選択ドロップダウン
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
@@ -136,7 +138,6 @@ fun MainContent(
                 }
             }
 
-            // キーワード検索バー
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -167,13 +168,51 @@ fun MainContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LunchDetailContent(viewModel: LunchViewModel, onBack: () -> Unit) {
+fun LunchDetailContent(
+    viewModel: LunchViewModel,
+    onBack: () -> Unit,
+    onEditClick: () -> Unit // ★ ここで「画面を変える」という命令を受け取れるようにした
+) {
     val lunch = viewModel.selectedLunch ?: return
+    var showMenu by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("詳細情報") },
-                navigationIcon = { IconButton(onClick = onBack) { Text("◀") } }
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "戻る")
+                    }
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = "メニュー")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("編集") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.prepareEdit(lunch)
+                                    onEditClick() // ★ ここで受け取った命令（親の画面切り替え）を実行！
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("削除", color = Color.Red) },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.deleteLunch(lunch)
+                                    onBack()
+                                }
+                            )
+                        }
+                    }
+                }
             )
         }
     ) { innerPadding ->
