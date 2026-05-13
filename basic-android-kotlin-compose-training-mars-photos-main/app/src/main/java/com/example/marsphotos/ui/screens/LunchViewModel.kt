@@ -27,7 +27,6 @@ class LunchViewModel(
     // 変数名を統一（phoneInputを削除し、こちらに一本化）
     var phoneNumberInput by mutableStateOf("")
         private set
-<<<<<<< HEAD
     val lunchList = androidx.compose.runtime.mutableStateListOf<LunchEntity>()
 
     init {
@@ -39,8 +38,6 @@ class LunchViewModel(
             }
         }
     }
-=======
->>>>>>> 4937fbcc7817c188cd71fbc5af11b5b8f5a226bd
 
     var selectedGenre by mutableStateOf("和食")
         private set
@@ -73,7 +70,7 @@ class LunchViewModel(
     private fun resetInputs() {
         nameInput = ""
         addressInput = ""
-        phoneInput = ""
+        phoneNumberInput = ""
         selectedGenre = "和食"
         ratingInput = 0f
         commentInput = ""
