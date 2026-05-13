@@ -88,6 +88,15 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
+            // ★住所
+            OutlinedTextField(
+                value = viewModel.addressInput,
+                onValueChange = { viewModel.updateAddress(it) },
+                label = { Text("住所") },
+                placeholder = { Text("例：東京都千代田区...") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             OutlinedTextField(
                 value = viewModel.phoneNumberInput, // ViewModelの変数名
                 onValueChange = { viewModel.updatePhoneNumber(it) }, // ViewModelの関数名
