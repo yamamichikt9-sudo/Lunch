@@ -60,7 +60,7 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
         ) {
                 Text(text = "ランチ登録", style = MaterialTheme.typography.headlineMedium)
 
-                // 1. 写真選択
+
                 if (viewModel.photoUriInput == null) {
                     Button(
                         onClick = { launcher.launch("image/*") },
@@ -80,7 +80,7 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                     )
                 }
 
-                // 2. 店名入力
+
                 OutlinedTextField(
                     value = viewModel.nameInput, // UI担当の変数ではなく、あなたのViewModelの変数を使う
                     onValueChange = { viewModel.updateName(it) }, // 文字が変わったらViewModelに報告する
@@ -96,7 +96,7 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
             )
 
-                // 3. ジャンル選択
+
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
@@ -126,7 +126,7 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                     }
                 }
 
-                // 4. 評価
+
                 Text("評価")
                 Row {
                     for (i in 1..5) {
@@ -141,7 +141,7 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                     }
                 }
 
-                // 5. コメント
+
                 OutlinedTextField(
                     value = viewModel.commentInput,
                     onValueChange = { viewModel.updateComment(it) },
@@ -149,7 +149,7 @@ fun AddLunchScreen(viewModel: LunchViewModel,onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().height(120.dp)
                 )
 
-                // 6. 登録ボタン
+
                 Button(
                     onClick = {
                         viewModel.saveLunch()
