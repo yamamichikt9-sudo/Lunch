@@ -25,21 +25,6 @@ class LunchViewModel(
         private set
     var phoneNumberInput by mutableStateOf("")
         private set
-<<<<<<< HEAD
-    val lunchList = androidx.compose.runtime.mutableStateListOf<LunchEntity>()
-
-    init {
-        viewModelScope.launch {
-            // リポジトリからデータを取ってきてリストに反映させる
-            lunchesRepository.getAllLunchesStream().collect { items ->
-                lunchList.clear()
-                lunchList.addAll(items.reversed()) // 新しい順に並べる
-            }
-        }
-    }
-
-=======
->>>>>>> 0413e73437bb721a9254bc0ed012bb39db1fc8d2
     var selectedGenre by mutableStateOf("和食")
         private set
     var ratingInput by mutableStateOf(0f)
