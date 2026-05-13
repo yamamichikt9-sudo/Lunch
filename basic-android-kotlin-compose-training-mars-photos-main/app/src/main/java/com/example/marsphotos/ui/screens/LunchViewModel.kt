@@ -122,3 +122,5 @@ class LunchViewModel(
         }
     }
 }
+
+// MarsViewModel.kt 内

@@ -34,24 +34,44 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.marsphotos.R
 import com.example.marsphotos.ui.screens.HomeScreen
+import com.example.marsphotos.ui.screens.LunchViewModel
+import com.example.marsphotos.ui.screens.MarsUiState
 import com.example.marsphotos.ui.screens.MarsViewModel
 
 @Composable
 fun MarsPhotosApp() {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    // 1. 各ViewModelを呼び出す
+    val marsViewModel: MarsViewModel = viewModel(factory = MarsViewModel.Factory)
+    val lunchViewModel: LunchViewModel = viewModel(factory = LunchViewModel.Factory)
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = { MarsTopAppBar(scrollBehavior = scrollBehavior) }
-    ) {
+    ) { innerPadding ->
         Surface(
             modifier = Modifier.fillMaxSize()
         ) {
-            val marsViewModel: MarsViewModel =
-                viewModel(factory = MarsViewModel.Factory)
+            // ここでHomeScreenを呼び出す
             HomeScreen(
-                marsUiState = marsViewModel.marsUiState,
-                retryAction = marsViewModel::getMarsPhotos,
-                contentPadding = it
+                // 修正ポイント：viewModelのlunchListをSuccessに入れて渡す
+                marsUiState = MarsUiState.Success(lunchViewModel.lunchList),
+                onCardClick = { lunch ->
+                    // 詳細表示の処理（必要なら）
+                    lunchViewModel.onLunchSelected(lunch)
+                },
+                onEditClick = { lunch ->
+                    // 編集処理（必要なら）
+                },
+                onDeleteClick = { lunch ->
+                    // 削除を実行
+                    lunchViewModel.deleteLunch(lunch)
+                },
+                // retryActionが必要な定義になっているので追加
+                retryAction = { marsViewModel.getMarsPhotos() },
+                modifier = Modifier,
+                contentPadding = innerPadding
             )
         }
     }
