@@ -1,6 +1,7 @@
 package com.example.marsphotos.ui.screens
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -18,7 +19,7 @@ class LunchViewModel(
     private val lunchesRepository: LunchesRepository
 ) : ViewModel() {
 
-
+    // --- 入力フォームの状態 ---
     var nameInput by mutableStateOf("")
         private set
     var addressInput by mutableStateOf("")
@@ -34,24 +35,26 @@ class LunchViewModel(
     var photoUriInput by mutableStateOf<String?>(null)
         private set
 
-
-    val lunchList = androidx.compose.runtime.mutableStateListOf<LunchEntity>()
+    // --- データのリスト ---
+    // 重複していた宣言を1つにまとめました
+    val lunchList = mutableStateListOf<LunchEntity>()
 
     init {
         viewModelScope.launch {
-
+            // リポジトリからデータを取得してリストに反映させる
             lunchesRepository.getAllLunchesStream().collect { items ->
                 lunchList.clear()
+                // 新しいデータが上に来るように逆順で追加
                 lunchList.addAll(items.reversed())
             }
         }
     }
 
-
+    // 保存ボタンの有効判定
     val canSave: Boolean
         get() = nameInput.isNotBlank()
 
-
+    // --- 各入力項目の更新用関数 ---
     fun updateName(newName: String) { nameInput = newName }
     fun updateAddress(newAddress: String) { addressInput = newAddress }
     fun updatePhoneNumber(input: String) { phoneNumberInput = input }
@@ -60,6 +63,7 @@ class LunchViewModel(
     fun updateComment(newComment: String) { commentInput = newComment }
     fun updatePhoto(uri: String) { photoUriInput = uri }
 
+    // 入力フィールドを空にする
     private fun resetInputs() {
         nameInput = ""
         addressInput = ""
@@ -70,7 +74,7 @@ class LunchViewModel(
         photoUriInput = null
     }
 
-
+    // --- DB操作 ---
     fun saveLunch() {
         if (!canSave) return
         val newLunch = LunchEntity(
@@ -85,10 +89,9 @@ class LunchViewModel(
         )
         viewModelScope.launch {
             lunchesRepository.insertLunch(newLunch)
+            resetInputs() // 保存完了後に入力をリセット
         }
-        resetInputs()
     }
-
 
     fun deleteLunch(lunch: LunchEntity) {
         viewModelScope.launch {
@@ -96,7 +99,7 @@ class LunchViewModel(
         }
     }
 
-
+    // ViewModelFactoryの設定
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

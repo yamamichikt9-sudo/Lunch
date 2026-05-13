@@ -77,19 +77,81 @@ class MainActivity : ComponentActivity() {
                                 }
                             } else {
 
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize().padding(innerPadding),
-                                    contentPadding = PaddingValues(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                val categories = remember(lunchViewModel.lunchList.toList()) {
+                                    listOf("すべて") + lunchViewModel.lunchList.map { it.category }.distinct()
+
+                                }
+                                var currentCategory by remember { mutableStateOf("すべて") }
+                                var expanded by remember { mutableStateOf(false) }
+
+                                val filteredList =
+                                    remember(currentCategory, lunchViewModel.lunchList) {
+                                        if (currentCategory == "すべて") {
+                                            lunchViewModel.lunchList
+                                        } else {
+                                            lunchViewModel.lunchList.filter { it.category == currentCategory }
+                                        }
+                                    }
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(innerPadding)
                                 ) {
-                                    items(lunchViewModel.lunchList) { lunch ->
-                                        LunchCard(lunch = lunch)
+                                    ExposedDropdownMenuBox(
+                                        expanded = expanded,
+                                        onExpandedChange = { expanded = !expanded },
+                                        modifier = Modifier.padding(
+                                            start = 16.dp,
+                                            top = 8.dp,
+                                            end = 16.dp
+                                        )
+                                    ) {
+                                        OutlinedTextField(
+                                            value = currentCategory,
+                                            onValueChange = {},
+                                            readOnly = true,
+                                            label = { Text("ジャンル") },
+                                            trailingIcon = {
+                                                ExposedDropdownMenuDefaults.TrailingIcon(
+                                                    expanded = expanded
+                                                )
+                                            },
+                                            modifier = Modifier.menuAnchor()
+                                        )
+                                        ExposedDropdownMenu(
+                                            expanded = expanded,
+                                            onDismissRequest = { expanded = false }
+                                        ) {
+                                            categories.forEach { category ->
+                                                DropdownMenuItem(
+                                                    text = { Text(category) },
+                                                    onClick = {
+                                                        currentCategory = category
+                                                        expanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+
+
+
+
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        items(filteredList) { lunch ->
+                                            LunchCard(lunch = lunch)
+                                        }
                                     }
                                 }
+
                             }
                         }
                     } else {
-
                         AddLunchScreen(
                             viewModel = lunchViewModel,
                             onBack = { currentScreen = "main" }
