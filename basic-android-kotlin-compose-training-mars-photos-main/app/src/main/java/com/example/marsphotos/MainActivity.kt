@@ -35,7 +35,15 @@ import com.example.marsphotos.ui.theme.MarsPhotosTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.graphics.Color
-
+import com.example.marsphotos.ui.screens.HomeScreen
+import androidx.compose.foundation.clickable
+import com.example.marsphotos.data.LunchEntity
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.rememberAsyncImagePainter
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 
 
 class MainActivity : ComponentActivity() {
@@ -46,116 +54,164 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MarsPhotosTheme {
-                // 1.
                 val lunchViewModel: LunchViewModel = viewModel(factory = LunchViewModel.Factory)
                 var currentScreen by remember { mutableStateOf("main") }
 
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    if (currentScreen == "main") {
-
-                        Scaffold(
-                            topBar = { CenterAlignedTopAppBar(title = { Text("ランチログ") }) },
-                            floatingActionButton = {
-                                FloatingActionButton(onClick = { currentScreen = "add" }) {
-                                    Text("+", style = MaterialTheme.typography.headlineMedium)
-                                }
-                            }
-                        ) { innerPadding ->
-
-                            if (lunchViewModel.lunchList.isEmpty()) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize().padding(innerPadding),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("ランチを登録してみよう！")
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        Button(onClick = { currentScreen = "add" }) {
-                                            Text("ランチを登録")
-                                        }
+                    // currentScreenの値によって表示を切り替える
+                    when (currentScreen) {
+                        "main" -> {
+                            Scaffold(
+                                topBar = { CenterAlignedTopAppBar(title = { Text("ランチログ") }) },
+                                floatingActionButton = {
+                                    FloatingActionButton(onClick = { currentScreen = "add" }) {
+                                        Text("+", style = MaterialTheme.typography.headlineMedium)
                                     }
                                 }
-                            } else {
-
-                                val categories = remember(lunchViewModel.lunchList.toList()) {
-                                    listOf("すべて") + lunchViewModel.lunchList.map { it.category }.distinct()
-
-                                }
-                                var currentCategory by remember { mutableStateOf("すべて") }
-                                var expanded by remember { mutableStateOf(false) }
-
-                                val filteredList =
-                                    remember(currentCategory, lunchViewModel.lunchList) {
-                                        if (currentCategory == "すべて") {
-                                            lunchViewModel.lunchList
-                                        } else {
-                                            lunchViewModel.lunchList.filter { it.category == currentCategory }
+                            ) { innerPadding ->
+                                if (lunchViewModel.lunchList.isEmpty()) {
+                                    Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text("ランチを登録してみよう！")
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            Button(onClick = { currentScreen = "add" }) { Text("ランチを登録") }
                                         }
                                     }
+                                } else {
+                                    // カテゴリフィルタなどのロジック（そのまま）
+                                    val categories = remember(lunchViewModel.lunchList.toList()) {
+                                        listOf("すべて") + lunchViewModel.lunchList.map { it.category }.distinct()
+                                    }
+                                    var currentCategory by remember { mutableStateOf("すべて") }
+                                    var expanded by remember { mutableStateOf(false) }
+                                    val filteredList = remember(currentCategory, lunchViewModel.lunchList.toList()) {
+                                        if (currentCategory == "すべて") lunchViewModel.lunchList
+                                        else lunchViewModel.lunchList.filter { it.category == currentCategory }
+                                    }
 
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(innerPadding)
-                                ) {
-                                    ExposedDropdownMenuBox(
-                                        expanded = expanded,
-                                        onExpandedChange = { expanded = !expanded },
-                                        modifier = Modifier.padding(
-                                            start = 16.dp,
-                                            top = 8.dp,
-                                            end = 16.dp
-                                        )
-                                    ) {
-                                        OutlinedTextField(
-                                            value = currentCategory,
-                                            onValueChange = {},
-                                            readOnly = true,
-                                            label = { Text("ジャンル") },
-                                            trailingIcon = {
-                                                ExposedDropdownMenuDefaults.TrailingIcon(
-                                                    expanded = expanded
-                                                )
-                                            },
-                                            modifier = Modifier.menuAnchor()
-                                        )
-                                        ExposedDropdownMenu(
+                                    Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                                        // ジャンル選択 (ドロップダウン)
+                                        ExposedDropdownMenuBox(
                                             expanded = expanded,
-                                            onDismissRequest = { expanded = false }
+                                            onExpandedChange = { expanded = !expanded },
+                                            modifier = Modifier.padding(16.dp)
                                         ) {
-                                            categories.forEach { category ->
-                                                DropdownMenuItem(
-                                                    text = { Text(category) },
-                                                    onClick = {
-                                                        currentCategory = category
-                                                        expanded = false
+                                            OutlinedTextField(
+                                                value = currentCategory, onValueChange = {}, readOnly = true, label = { Text("ジャンル") },
+                                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                                modifier = Modifier.menuAnchor().fillMaxWidth()
+                                            )
+                                            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                                                categories.forEach { category ->
+                                                    DropdownMenuItem(text = { Text(category) }, onClick = { currentCategory = category; expanded = false })
+                                                }
+                                            }
+                                        }
+
+                                        LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                            items(filteredList) { lunch ->
+                                                LunchCard(
+                                                    lunch = lunch,
+                                                    // ★ ここでクリック時のロジックを注入！
+                                                    modifier = Modifier.clickable {
+                                                        lunchViewModel.onLunchSelected(lunch)
+                                                        currentScreen = "detail"
                                                     }
                                                 )
                                             }
                                         }
                                     }
-
-
-
-
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentPadding = PaddingValues(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                }
+                            }
+                        }
+                        "add" -> {
+                            AddLunchScreen(viewModel = lunchViewModel, onBack = { currentScreen = "main" })
+                        }
+                        "detail" -> {
+                            val lunch = lunchViewModel.selectedLunch
+                            if (lunch != null) {
+                                Scaffold(
+                                    topBar = {
+                                        CenterAlignedTopAppBar(
+                                            title = { Text("詳細情報") },
+                                            navigationIcon = {
+                                                IconButton(onClick = { currentScreen = "main" }) {
+                                                    // 標準アイコンを使うために追加が必要な場合がありますが、一旦戻るボタンとして機能させます
+                                                    Text("◀")
+                                                }
+                                            }
+                                        )
+                                    }
+                                ) { innerPadding ->
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(innerPadding)
+                                            .verticalScroll(rememberScrollState()) // 長い文章でもスクロールできるように
                                     ) {
-                                        items(filteredList) { lunch ->
-                                            LunchCard(lunch = lunch)
+                                        // 1. 大きな写真
+                                        Image(
+                                            painter = rememberAsyncImagePainter(lunch.photoUrl),
+                                            contentDescription = null,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(250.dp),
+                                            contentScale = ContentScale.Crop
+                                        )
+
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            // 2. 店名とジャンル
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(text = lunch.name, style = MaterialTheme.typography.headlineMedium)
+                                                Badge { Text(lunch.category) }
+                                            }
+
+                                            // 3. 星評価
+                                            Row(modifier = Modifier.padding(vertical = 8.dp)) {
+                                                repeat(5) { index ->
+                                                    Icon(
+                                                        imageVector = Icons.Filled.Star,
+                                                        contentDescription = null,
+                                                        tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
+                                                }
+                                            }
+
+                                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                                            // 4. 詳細情報
+                                            Text(text = "📍 住所", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
+                                            Text(text = lunch.address.ifBlank { "未登録" }, style = MaterialTheme.typography.bodyLarge)
+
+                                            Spacer(modifier = Modifier.height(16.dp))
+
+                                            Text(text = "📞 電話番号", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
+                                            Text(text = lunch.phoneNumber?.ifBlank { "未登録" } ?: "未登録", style = MaterialTheme.typography.bodyLarge)
+
+                                            Spacer(modifier = Modifier.height(16.dp))
+
+                                            Text(text = "💬 コメント", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
+                                            Text(text = lunch.comment.ifBlank { "コメントなし" }, style = MaterialTheme.typography.bodyLarge)
+
+                                            Spacer(modifier = Modifier.height(32.dp))
+
+                                            // 5. 一覧に戻るボタン
+                                            Button(
+                                                onClick = { currentScreen = "main" },
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Text("一覧に戻る")
+                                            }
                                         }
                                     }
                                 }
-
                             }
                         }
-                    } else {
-                        AddLunchScreen(
-                            viewModel = lunchViewModel,
-                            onBack = { currentScreen = "main" }
-                        )
                     }
                 }
             }
@@ -163,57 +219,37 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
-fun LunchCard(lunch: com.example.marsphotos.data.LunchEntity) {
+fun LunchCard(
+    lunch: LunchEntity,
+    modifier: Modifier = Modifier // ★ 引数にmodifierを追加して受け取れるようにする
+) {
     Card(
-        modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(), // ★ 渡されたmodifierをここに適用！
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-
             androidx.compose.foundation.Image(
                 painter = coil.compose.rememberAsyncImagePainter(lunch.photoUrl),
                 contentDescription = null,
-                modifier = androidx.compose.ui.Modifier
-                    .fillMaxWidth()
-                    .height(180.dp),
+                modifier = Modifier.fillMaxWidth().height(180.dp),
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
             )
-
-            Column(modifier = androidx.compose.ui.Modifier.padding(16.dp)) {
-                Row(
-                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
                     Badge { Text(lunch.category) }
                 }
-
-                Row(modifier = androidx.compose.ui.Modifier.padding(vertical = 4.dp)) {
+                Row(modifier = Modifier.padding(vertical = 4.dp)) {
                     repeat(5) { index ->
-                        Icon(
-                            imageVector = Icons.Filled.Star,
-                            contentDescription = null,
+                        Icon(imageVector = Icons.Filled.Star, contentDescription = null,
                             tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
-                            modifier = androidx.compose.ui.Modifier.size(18.dp)
-                        )
+                            modifier = Modifier.size(18.dp))
                     }
                 }
-
-                Spacer(modifier = androidx.compose.ui.Modifier.height(4.dp))
-
-                Text(
-                    text = lunch.comment,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.DarkGray
-                )
+                Text(text = lunch.comment, style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
             }
         }
     }
-}
-
-
-//
+}//
