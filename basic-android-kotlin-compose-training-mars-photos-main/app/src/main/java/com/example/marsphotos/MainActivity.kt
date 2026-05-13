@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.example.marsphotos
 
-import android.R.attr.singleLine
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,8 +36,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.graphics.Color
 
-
-
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +44,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MarsPhotosTheme {
-                // 1.
                 val lunchViewModel: LunchViewModel = viewModel(factory = LunchViewModel.Factory)
                 var currentScreen by remember { mutableStateOf("main") }
 
@@ -80,7 +76,6 @@ class MainActivity : ComponentActivity() {
 
                                 val categories = remember(lunchViewModel.lunchList.toList()) {
                                     listOf("すべて") + lunchViewModel.lunchList.map { it.category }.distinct()
-
                                 }
                                 var currentCategory by remember { mutableStateOf("すべて") }
                                 var expanded by remember { mutableStateOf(false) }
@@ -88,7 +83,7 @@ class MainActivity : ComponentActivity() {
                                 var searchQuery by remember { mutableStateOf("") }
 
                                 val filteredList =
-                                    remember(currentCategory, lunchViewModel.lunchList) {
+                                    remember(currentCategory, searchQuery, lunchViewModel.lunchList.toList()) {
                                         val genreFiltered = if (currentCategory == "すべて") {
                                             lunchViewModel.lunchList
                                         } else {
@@ -147,18 +142,32 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
 
-
+                                    // エラーが絶対出ないように整理した検索バー
                                     OutlinedTextField(
                                         value = searchQuery,
                                         onValueChange = { searchQuery = it },
                                         label = { Text("キーワード検索") },
                                         placeholder = { Text("店名やコメントを入力") },
                                         singleLine = true,
+                                        trailingIcon = {
+                                            if (searchQuery.isNotEmpty()) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .padding(end = 12.dp)
+                                                        .clickable { searchQuery = "" }
+                                                ) {
+                                                    Text(
+                                                        text = "×",
+                                                        style = MaterialTheme.typography.titleLarge,
+                                                        color = Color.Gray
+                                                    )
+                                                }
+                                            }
+                                        },
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(horizontal = 16.dp, vertical = 8.dp)
                                     )
-
 
                                     LazyColumn(
                                         modifier = Modifier.fillMaxSize(),
@@ -185,47 +194,45 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
 fun LunchCard(lunch: com.example.marsphotos.data.LunchEntity) {
     Card(
-        modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-
             androidx.compose.foundation.Image(
                 painter = coil.compose.rememberAsyncImagePainter(lunch.photoUrl),
                 contentDescription = null,
-                modifier = androidx.compose.ui.Modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp),
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
             )
 
-            Column(modifier = androidx.compose.ui.Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Row(
-                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
                     Badge { Text(lunch.category) }
                 }
 
-                Row(modifier = androidx.compose.ui.Modifier.padding(vertical = 4.dp)) {
+                Row(modifier = Modifier.padding(vertical = 4.dp)) {
                     repeat(5) { index ->
                         Icon(
                             imageVector = Icons.Filled.Star,
                             contentDescription = null,
                             tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
-                            modifier = androidx.compose.ui.Modifier.size(18.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = androidx.compose.ui.Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = lunch.comment,
@@ -236,3 +243,4 @@ fun LunchCard(lunch: com.example.marsphotos.data.LunchEntity) {
         }
     }
 }
+
