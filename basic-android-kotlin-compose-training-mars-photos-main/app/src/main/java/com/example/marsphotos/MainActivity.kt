@@ -16,6 +16,7 @@
 
 package com.example.marsphotos
 
+import android.R.attr.singleLine
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -84,12 +85,23 @@ class MainActivity : ComponentActivity() {
                                 var currentCategory by remember { mutableStateOf("すべて") }
                                 var expanded by remember { mutableStateOf(false) }
 
+                                var searchQuery by remember { mutableStateOf("") }
+
                                 val filteredList =
                                     remember(currentCategory, lunchViewModel.lunchList) {
-                                        if (currentCategory == "すべて") {
+                                        val genreFiltered = if (currentCategory == "すべて") {
                                             lunchViewModel.lunchList
                                         } else {
                                             lunchViewModel.lunchList.filter { it.category == currentCategory }
+                                        }
+
+                                        if (searchQuery.isBlank()) {
+                                            genreFiltered
+                                        } else {
+                                            genreFiltered.filter { lunch ->
+                                                lunch.name.contains(searchQuery, ignoreCase = true) ||
+                                                        lunch.comment.contains(searchQuery, ignoreCase = true)
+                                            }
                                         }
                                     }
 
@@ -136,6 +148,16 @@ class MainActivity : ComponentActivity() {
                                     }
 
 
+                                    OutlinedTextField(
+                                        value = searchQuery,
+                                        onValueChange = { searchQuery = it },
+                                        label = { Text("キーワード検索") },
+                                        placeholder = { Text("店名やコメントを入力") },
+                                        singleLine = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    )
 
 
                                     LazyColumn(
@@ -214,6 +236,3 @@ fun LunchCard(lunch: com.example.marsphotos.data.LunchEntity) {
         }
     }
 }
-
-
-//
