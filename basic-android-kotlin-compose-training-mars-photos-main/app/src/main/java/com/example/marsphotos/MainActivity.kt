@@ -226,6 +226,34 @@ fun LunchDetailContent(
     val lunch = viewModel.selectedLunch ?: return
     var showMenu by remember { mutableStateOf(false) } // メニュー状態
 
+    // ★ 削除確認ダイアログを表示するかどうかの状態
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false }, // 枠外をタップしたとき
+            title = { Text("削除の確認") },
+            text = { Text("「${lunch.name}」を削除しますか？\nこの操作は取り消せません。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteLunch(lunch) // 実際に削除
+                        onBack() // 一覧に戻る
+                    }
+                ) {
+                    Text("削除", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -256,8 +284,8 @@ fun LunchDetailContent(
                                 text = { Text("削除", color = Color.Red) },
                                 onClick = {
                                     showMenu = false
-                                    viewModel.deleteLunch(lunch)
-                                    onBack()
+                                    // ★ 直接削除せずに、ダイアログフラグを「真」にする
+                                    showDeleteDialog = true
                                 }
                             )
                         }
