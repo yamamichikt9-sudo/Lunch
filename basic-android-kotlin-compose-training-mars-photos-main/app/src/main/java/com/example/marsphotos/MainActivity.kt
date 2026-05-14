@@ -118,6 +118,7 @@ fun MainContent(
         }
 
 
+
         when (currentSort) {
             SortOption.LATEST -> searchFiltered.sortedByDescending { it.id }
             SortOption.OLDEST -> searchFiltered.sortedBy { it.id }
