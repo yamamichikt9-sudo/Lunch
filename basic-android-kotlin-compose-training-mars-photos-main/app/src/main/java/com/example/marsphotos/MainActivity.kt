@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -71,15 +70,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-enum class SortOption(val title: String) {
-    LATEST("新しい順"),
-    OLDEST("古い順"),
-    NAME("名前順"),
-    RATING("評価順")
-}
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContent(
@@ -91,24 +81,19 @@ fun MainContent(
     var currentCategory by remember { mutableStateOf("すべて") }
     var expanded by remember { mutableStateOf(false) }
 
-    var currentSort by remember { mutableStateOf(SortOption.LATEST) }
-    var sortExpanded by remember { mutableStateOf(false) }
-
     val categories = remember(viewModel.lunchList.toList()) {
         listOf("すべて") + viewModel.lunchList.map { it.category }.distinct()
     }
 
     // ジャンルとキーワードの両方でフィルタリング
-    val filteredList = remember(currentCategory, searchQuery, currentSort, viewModel.lunchList.toList()) {
-        // ジャンル選択
+    val filteredList = remember(currentCategory, searchQuery, viewModel.lunchList.toList()) {
         val genreFiltered = if (currentCategory == "すべて") {
             viewModel.lunchList
         } else {
             viewModel.lunchList.filter { it.category == currentCategory }
         }
 
-        //キーワード検索
-        val searchFiltered = if (searchQuery.isBlank()) {
+        if (searchQuery.isBlank()) {
             genreFiltered
         } else {
             genreFiltered.filter { lunch ->
@@ -116,18 +101,7 @@ fun MainContent(
                         lunch.comment.contains(searchQuery, ignoreCase = true)
             }
         }
-
-
-        when (currentSort) {
-            SortOption.LATEST -> searchFiltered.sortedByDescending { it.id }
-            SortOption.OLDEST -> searchFiltered.sortedBy { it.id }
-            SortOption.NAME -> searchFiltered.sortedBy { it.name }
-            SortOption.RATING -> searchFiltered.sortedByDescending { it.rating }
-        }
     }
-    //
-
-
 
     Scaffold(
         topBar = { CenterAlignedTopAppBar(title = { Text("ランチログ") }) },
@@ -138,66 +112,29 @@ fun MainContent(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // ジャンル選択ドロップダウン
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-
-
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    OutlinedTextField(
-                        value = currentCategory,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("ジャンル") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }) {
-                        categories.forEach { category ->
-                            DropdownMenuItem(
-                                text = { Text(category) },
-                                onClick = { currentCategory = category; expanded = false }
-                            )
-                        }
-                    }
-                }
-
-                ExposedDropdownMenuBox(
-                    expanded = sortExpanded,
-                    onExpandedChange = { sortExpanded = !sortExpanded },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    OutlinedTextField(
-                        value = currentSort.title,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("並び替え") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sortExpanded) },
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = sortExpanded,
-                        onDismissRequest = { sortExpanded = false }) {
-                        SortOption.values().forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option.title) },
-                                onClick = { currentSort = option; sortExpanded = false }
-                            )
-                        }
+                OutlinedTextField(
+                    value = currentCategory,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("ジャンル") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    categories.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category) },
+                            onClick = { currentCategory = category; expanded = false }
+                        )
                     }
                 }
             }
-
 
             // キーワード検索バー
             OutlinedTextField(
@@ -242,8 +179,6 @@ fun MainContent(
         }
     }
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

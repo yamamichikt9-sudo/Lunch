@@ -36,6 +36,9 @@ class LunchViewModel(
         private set
     var selectedLunch by mutableStateOf<LunchEntity?>(null)
         private set
+    // 1. 今「編集」しているのか「新規」なのかを判断するIDを保持
+    var editingLunchId: Int? by mutableStateOf(null)
+        private set
 
     // --- データのリスト ---
     // 重複していた宣言を1つにまとめました
@@ -75,6 +78,18 @@ class LunchViewModel(
         selectedLunch = null
     }
 
+    // 2. 編集ボタンを押したときに、今のデータを入力欄にセットする関数
+    fun prepareEdit(lunch: LunchEntity) {
+        editingLunchId = lunch.id
+        nameInput = lunch.name
+        addressInput = lunch.address ?: ""
+        phoneNumberInput = lunch.phoneNumber ?: ""
+        selectedGenre = lunch.category
+        ratingInput = lunch.rating.toFloat()
+        commentInput = lunch.comment
+        photoUriInput = lunch.photoUrl
+    }
+
     // 入力フィールドを空にする
     private fun resetInputs() {
         nameInput = ""
@@ -89,7 +104,10 @@ class LunchViewModel(
     // --- DB操作 ---
     fun saveLunch() {
         if (!canSave) return
-        val newLunch = LunchEntity(
+
+        // 編集なら元のIDを使い、新規なら0（自動採番）を使う
+        val lunch = LunchEntity(
+            id = editingLunchId ?: 0,
             name = nameInput,
             address = addressInput,
             phoneNumber = phoneNumberInput,
@@ -99,9 +117,18 @@ class LunchViewModel(
             photoUrl = photoUriInput ?: "",
             date = System.currentTimeMillis()
         )
+
         viewModelScope.launch {
-            lunchesRepository.insertLunch(newLunch)
+            if (editingLunchId == null) {
+                // 新規登録
+                lunchesRepository.insertLunch(lunch)
+            } else {
+                // ★編集保存（上書き）
+                lunchesRepository.updateLunch(lunch)
+            }
+
             resetInputs() // 保存完了後に入力をリセット
+            editingLunchId = null // 編集モードを終了
         }
     }
 
