@@ -55,7 +55,6 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 TextButton(
                     onClick = {
                         showConfirmDialog = false
-                        // 保存ロジック（画像コピー ＆ DB保存）
                         viewModel.photoUriInput?.let { originalUri ->
                             val permanentUri = viewModel.saveImageToInternalStorage(context, originalUri)
                             viewModel.updatePhoto(permanentUri)
@@ -78,7 +77,6 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                // トップバーのタイトルも出し分け
                 title = { Text(if (isEdit) "ランチ編集" else "ランチ登録") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -86,17 +84,36 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                     }
                 }
             )
+        },
+        // ★ ここを追加：ボタンを画面下部に固定
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                tonalElevation = 2.dp, // ほんのり色をつけて境界をわかりやすく
+                shadowElevation = 8.dp
+            ) {
+                Button(
+                    onClick = { showConfirmDialog = true },
+                    enabled = viewModel.canSave,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp) // ボタンの周りに余白
+                ) {
+                    Text(confirmButtonText)
+                }
+            }
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 見出しも出し分け
+            Spacer(modifier = Modifier.height(8.dp)) // 上に少し余裕
+
             Text(text = if (isEdit) "ランチ編集" else "ランチ登録", style = MaterialTheme.typography.headlineMedium)
 
             // --- 画像選択 ---
@@ -214,17 +231,9 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(120.dp)
             )
 
-            // --- 登録/保存ボタン ---
-            Button(
-                onClick = {
-                    // 直接保存せずに、ダイアログを表示
-                    showConfirmDialog = true
-                },
-                enabled = viewModel.canSave,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(confirmButtonText) // ボタン名も「登録」か「保存」に切り替え
-            }
+            // ★ ここにあった元の Button は消去しました。代わりに Scaffold の bottomBar に配置しています。
+
+            Spacer(modifier = Modifier.height(16.dp)) // スクロールした時の最後の余白
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.example.marsphotos
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,14 +16,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.MoreVert // 追加
-import androidx.compose.material.icons.filled.ArrowBack // 追加
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Place // マップピンのアイコン
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext // Context取得用
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
@@ -63,7 +67,7 @@ class MainActivity : ComponentActivity() {
                             LunchDetailContent(
                                 viewModel = lunchViewModel,
                                 onBack = { currentScreen = "main" },
-                                onEditClick = { currentScreen = "add" } // ★ここを追加
+                                onEditClick = { currentScreen = "add" }
                             )
                         }
                     }
@@ -221,26 +225,25 @@ fun MainContent(
 fun LunchDetailContent(
     viewModel: LunchViewModel,
     onBack: () -> Unit,
-    onEditClick: () -> Unit // ★引数を追加
+    onEditClick: () -> Unit
 ) {
     val lunch = viewModel.selectedLunch ?: return
-    var showMenu by remember { mutableStateOf(false) } // メニュー状態
+    val context = LocalContext.current // マップ起動用
 
-    // ★ 削除確認ダイアログを表示するかどうかの状態
+    var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-
 
     if (showDeleteDialog) {
         AlertDialog(
-            onDismissRequest = { showDeleteDialog = false }, // 枠外をタップしたとき
+            onDismissRequest = { showDeleteDialog = false },
             title = { Text("削除の確認") },
             text = { Text("「${lunch.name}」を削除しますか？\nこの操作は取り消せません。") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
-                        viewModel.deleteLunch(lunch) // 実際に削除
-                        onBack() // 一覧に戻る
+                        viewModel.deleteLunch(lunch)
+                        onBack()
                     }
                 ) {
                     Text("削除", color = Color.Red)
@@ -263,7 +266,7 @@ fun LunchDetailContent(
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "戻る")
                     }
                 },
-                actions = { // ★ここからアクションメニュー復活
+                actions = {
                     Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(imageVector = Icons.Default.MoreVert, contentDescription = "メニュー")
@@ -277,14 +280,13 @@ fun LunchDetailContent(
                                 onClick = {
                                     showMenu = false
                                     viewModel.prepareEdit(lunch)
-                                    onEditClick() // ★コールバック実行
+                                    onEditClick()
                                 }
                             )
                             DropdownMenuItem(
                                 text = { Text("削除", color = Color.Red) },
                                 onClick = {
                                     showMenu = false
-                                    // ★ 直接削除せずに、ダイアログフラグを「真」にする
                                     showDeleteDialog = true
                                 }
                             )
@@ -319,14 +321,43 @@ fun LunchDetailContent(
                     }
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // --- 住所セクション（マップ連携ボタン付き） ---
                 Text(text = "📍 住所", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
-                Text(text = lunch.address.ifBlank { "未登録" })
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = lunch.address.ifBlank { "未登録" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (lunch.address.isNotBlank()) {
+                        IconButton(
+                            onClick = {
+                                val uri = Uri.parse("geo:0,0?q=${lunch.address}")
+                                val intent = Intent(Intent.ACTION_VIEW, uri)
+                                intent.setPackage("com.google.android.apps.maps")
+                                context.startActivity(intent)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = "マップで見る",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(text = "📞 電話番号", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
                 Text(text = lunch.phoneNumber?.ifBlank { "未登録" } ?: "未登録")
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(text = "💬 コメント", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
                 Text(text = lunch.comment.ifBlank { "コメントなし" })
+
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("一覧に戻る") }
             }
