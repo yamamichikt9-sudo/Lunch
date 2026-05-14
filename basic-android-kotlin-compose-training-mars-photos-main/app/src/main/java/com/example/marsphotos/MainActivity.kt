@@ -113,11 +113,6 @@ fun MainContent(
             }
         }
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> ceb0d7c4069b9c72853c3cd7f5fdad1d8dc619ba
         when (currentSort) {
             SortOption.LATEST -> searchFiltered.sortedByDescending { it.id }
             SortOption.OLDEST -> searchFiltered.sortedBy { it.id }
@@ -345,3 +340,5 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
         }
     }
 }
+
+//aaaaaaaaaaaaaa
