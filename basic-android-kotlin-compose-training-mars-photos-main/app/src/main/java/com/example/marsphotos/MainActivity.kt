@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.MoreVert // 追加
+import androidx.compose.material.icons.filled.ArrowBack // 追加
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -61,7 +62,8 @@ class MainActivity : ComponentActivity() {
                         "detail" -> {
                             LunchDetailContent(
                                 viewModel = lunchViewModel,
-                                onBack = { currentScreen = "main" }
+                                onBack = { currentScreen = "main" },
+                                onEditClick = { currentScreen = "add" } // ★ここを追加
                             )
                         }
                     }
@@ -71,14 +73,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
 enum class SortOption(val title: String) {
     LATEST("新しい順"),
     OLDEST("古い順"),
     NAME("名前順"),
     RATING("評価順")
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +90,6 @@ fun MainContent(
     var searchQuery by remember { mutableStateOf("") }
     var currentCategory by remember { mutableStateOf("すべて") }
     var expanded by remember { mutableStateOf(false) }
-
     var currentSort by remember { mutableStateOf(SortOption.LATEST) }
     var sortExpanded by remember { mutableStateOf(false) }
 
@@ -98,16 +97,13 @@ fun MainContent(
         listOf("すべて") + viewModel.lunchList.map { it.category }.distinct()
     }
 
-    // ジャンルとキーワードの両方でフィルタリング
-    val filteredList = remember(currentCategory, currentSort, viewModel.lunchList.toList()) {
-        // ジャンル選択
+    val filteredList = remember(currentCategory, searchQuery, currentSort, viewModel.lunchList.toList()) {
         val genreFiltered = if (currentCategory == "すべて") {
             viewModel.lunchList
         } else {
             viewModel.lunchList.filter { it.category == currentCategory }
         }
 
-        //キーワード検索
         val searchFiltered = if (searchQuery.isBlank()) {
             genreFiltered
         } else {
@@ -117,7 +113,6 @@ fun MainContent(
             }
         }
 
-
         when (currentSort) {
             SortOption.LATEST -> searchFiltered.sortedByDescending { it.id }
             SortOption.OLDEST -> searchFiltered.sortedBy { it.id }
@@ -125,8 +120,6 @@ fun MainContent(
             SortOption.RATING -> searchFiltered.sortedByDescending { it.rating }
         }
     }
-
-
 
     Scaffold(
         topBar = { CenterAlignedTopAppBar(title = { Text("ランチログ") }) },
@@ -137,15 +130,10 @@ fun MainContent(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-
-
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
@@ -159,9 +147,7 @@ fun MainContent(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }) {
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         categories.forEach { category ->
                             DropdownMenuItem(
                                 text = { Text(category) },
@@ -184,9 +170,7 @@ fun MainContent(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sortExpanded) },
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
-                        expanded = sortExpanded,
-                        onDismissRequest = { sortExpanded = false }) {
+                    ExposedDropdownMenu(expanded = sortExpanded, onDismissRequest = { sortExpanded = false }) {
                         SortOption.values().forEach { option ->
                             DropdownMenuItem(
                                 text = { Text(option.title) },
@@ -197,8 +181,6 @@ fun MainContent(
                 }
             }
 
-
-            // キーワード検索バー
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -207,16 +189,8 @@ fun MainContent(
                 singleLine = true,
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 12.dp)
-                                .clickable { searchQuery = "" }
-                        ) {
-                            Text(
-                                text = "×",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color.Gray
-                            )
+                        Box(modifier = Modifier.padding(end = 12.dp).clickable { searchQuery = "" }) {
+                            Text(text = "×", style = MaterialTheme.typography.titleLarge, color = Color.Gray)
                         }
                     }
                 },
@@ -244,13 +218,51 @@ fun MainContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LunchDetailContent(viewModel: LunchViewModel, onBack: () -> Unit) {
+fun LunchDetailContent(
+    viewModel: LunchViewModel,
+    onBack: () -> Unit,
+    onEditClick: () -> Unit // ★引数を追加
+) {
     val lunch = viewModel.selectedLunch ?: return
+    var showMenu by remember { mutableStateOf(false) } // メニュー状態
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("詳細情報") },
-                navigationIcon = { IconButton(onClick = onBack) { Text("◀") } }
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "戻る")
+                    }
+                },
+                actions = { // ★ここからアクションメニュー復活
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = "メニュー")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("編集") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.prepareEdit(lunch)
+                                    onEditClick() // ★コールバック実行
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("削除", color = Color.Red) },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.deleteLunch(lunch)
+                                    onBack()
+                                }
+                            )
+                        }
+                    }
+                }
             )
         }
     ) { innerPadding ->
