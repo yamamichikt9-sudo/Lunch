@@ -25,8 +25,17 @@ import androidx.compose.ui.draw.scale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
-
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    // --- ダイアログの状態管理 ---
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
+    // 編集か新規かを判定
+    val isEdit = viewModel.editingLunchId != null
+    val dialogTitle = if (isEdit) "編集の確認" else "登録の確認"
+    val dialogMessage = if (isEdit) "この内容で上書き保存しますか？" else "この内容で登録しますがよろしいですか？"
+    val confirmButtonText = if (isEdit) "保存" else "登録"
+
     var expanded by remember { mutableStateOf(false) }
     val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
 
@@ -36,16 +45,44 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
         uri?.let { viewModel.updatePhoto(it.toString()) }
     }
 
+    // --- 登録・編集確認ダイアログ ---
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text(dialogTitle) },
+            text = { Text(dialogMessage) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmDialog = false
+                        // 保存ロジック（画像コピー ＆ DB保存）
+                        viewModel.photoUriInput?.let { originalUri ->
+                            val permanentUri = viewModel.saveImageToInternalStorage(context, originalUri)
+                            viewModel.updatePhoto(permanentUri)
+                        }
+                        viewModel.saveLunch()
+                        onBack()
+                    }
+                ) {
+                    Text(confirmButtonText)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("ランチ登録") },
+                // トップバーのタイトルも出し分け
+                title = { Text(if (isEdit) "ランチ編集" else "ランチ登録") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "戻る"
-                        )
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "戻る")
                     }
                 }
             )
@@ -59,8 +96,10 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(text = "ランチ登録", style = MaterialTheme.typography.headlineMedium)
+            // 見出しも出し分け
+            Text(text = if (isEdit) "ランチ編集" else "ランチ登録", style = MaterialTheme.typography.headlineMedium)
 
+            // --- 画像選択 ---
             if (viewModel.photoUriInput == null) {
                 Button(
                     onClick = { launcher.launch("image/*") },
@@ -80,6 +119,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 )
             }
 
+            // --- 各種入力フィールド ---
             OutlinedTextField(
                 value = viewModel.nameInput,
                 onValueChange = { viewModel.updateName(it) },
@@ -103,6 +143,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
             )
 
+            // --- ジャンル選択 ---
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
@@ -132,29 +173,21 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 }
             }
 
+            // --- 評価（アニメーション付き） ---
             Text("評価")
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 var lastSelectedStar by remember { mutableStateOf(-1) }
-
                 for (i in 1..5) {
                     val isSelected = i <= viewModel.ratingInput.toInt()
                     val starTargetScale = if (lastSelectedStar == i) 1.3f else 1.0f
-
                     val scale by animateFloatAsState(
                         targetValue = starTargetScale,
                         animationSpec = androidx.compose.animation.core.spring(
                             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
                             stiffness = androidx.compose.animation.core.Spring.StiffnessLow
                         ),
-                        finishedListener = {
-                            if (lastSelectedStar == i) {
-                                lastSelectedStar = -1
-                            }
-                        }
+                        finishedListener = { if (lastSelectedStar == i) lastSelectedStar = -1 }
                     )
-
                     Icon(
                         imageVector = if (isSelected) Icons.Filled.Star else Icons.Outlined.Star,
                         contentDescription = "$i 点",
@@ -173,6 +206,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 }
             }
 
+            // --- コメント ---
             OutlinedTextField(
                 value = viewModel.commentInput,
                 onValueChange = { viewModel.updateComment(it) },
@@ -180,24 +214,16 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(120.dp)
             )
 
+            // --- 登録/保存ボタン ---
             Button(
                 onClick = {
-                    // 1. 画像が選択されている場合、内部ストレージに保存し直す
-                    viewModel.photoUriInput?.let { originalUri ->
-                        // 「他人のアルバム」から「自分の倉庫」へコピー
-                        val permanentUri = viewModel.saveImageToInternalStorage(context, originalUri)
-                        // 住所を「自分の倉庫」のものに書き換える
-                        viewModel.updatePhoto(permanentUri)
-                    }
-
-                    // 2. 書き換わった住所（または画像なし）でDBに保存！
-                    viewModel.saveLunch()
-                    onBack()
+                    // 直接保存せずに、ダイアログを表示
+                    showConfirmDialog = true
                 },
                 enabled = viewModel.canSave,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("この内容で登録")
+                Text(confirmButtonText) // ボタン名も「登録」か「保存」に切り替え
             }
         }
     }
