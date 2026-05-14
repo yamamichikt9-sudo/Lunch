@@ -138,6 +138,31 @@ class LunchViewModel(
         }
     }
 
+    /**
+     * 選択された画像をアプリ専用の内部ストレージに保存し、新しいURIを返す
+     */
+    fun saveImageToInternalStorage(context: android.content.Context, uriString: String): String {
+        return try {
+            val uri = android.net.Uri.parse(uriString)
+            val inputStream = context.contentResolver.openInputStream(uri)
+
+            // ファイル名をユニークにする（例：lunch_1715650000.jpg）
+            val fileName = "lunch_${System.currentTimeMillis()}.jpg"
+            val file = java.io.File(context.filesDir, fileName)
+
+            inputStream?.use { input ->
+                file.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            // コープした新しいファイルのURI（file://...）を文字列で返す
+            android.net.Uri.fromFile(file).toString()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            uriString // 失敗した場合は元のURIを返す（バックアップ策）
+        }
+    }
+
     // ViewModelFactoryの設定
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

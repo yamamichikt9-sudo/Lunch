@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.scale
 @Composable
 fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     var expanded by remember { mutableStateOf(false) }
     val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
 
@@ -181,6 +182,15 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
 
             Button(
                 onClick = {
+                    // 1. 画像が選択されている場合、内部ストレージに保存し直す
+                    viewModel.photoUriInput?.let { originalUri ->
+                        // 「他人のアルバム」から「自分の倉庫」へコピー
+                        val permanentUri = viewModel.saveImageToInternalStorage(context, originalUri)
+                        // 住所を「自分の倉庫」のものに書き換える
+                        viewModel.updatePhoto(permanentUri)
+                    }
+
+                    // 2. 書き換わった住所（または画像なし）でDBに保存！
                     viewModel.saveLunch()
                     onBack()
                 },
