@@ -20,6 +20,10 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.marsphotos.ui.screens.LunchViewModel
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.draw.scale
+import android.app.DatePickerDialog
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +42,24 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
 
     var expanded by remember { mutableStateOf(false) }
     val genres = listOf("和食", "洋食", "イタリアン", "ラーメン", "カフェ", "その他")
+
+    val calendar = Calendar.getInstance()
+
+    val formattedDate = SimpleDateFormat(
+        "yyyy/MM/dd",
+        Locale.getDefault()
+    ).format(viewModel.dateInput)
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            calendar.set(year, month, dayOfMonth)
+            viewModel.updateDate(calendar.timeInMillis)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
         contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
@@ -120,7 +142,9 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
             if (viewModel.photoUriInput == null) {
                 Button(
                     onClick = { launcher.launch("image/*") },
-                    modifier = Modifier.fillMaxWidth().height(150.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
                     shape = MaterialTheme.shapes.medium
                 ) {
                     Text("写真選択")
@@ -172,7 +196,9 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                     readOnly = true,
                     label = { Text("ジャンル") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -188,6 +214,15 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                         )
                     }
                 }
+            }
+
+            OutlinedButton(
+                onClick = {
+                    datePickerDialog.show()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "来店日: $formattedDate")
             }
 
             // --- 評価（アニメーション付き） ---
@@ -228,7 +263,9 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 value = viewModel.commentInput,
                 onValueChange = { viewModel.updateComment(it) },
                 label = { Text("コメント") },
-                modifier = Modifier.fillMaxWidth().height(120.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
             )
 
             // ★ ここにあった元の Button は消去しました。代わりに Scaffold の bottomBar に配置しています。
