@@ -33,6 +33,9 @@ import com.example.marsphotos.data.LunchEntity
 import com.example.marsphotos.ui.AddLunchScreen
 import com.example.marsphotos.ui.screens.LunchViewModel
 import com.example.marsphotos.ui.theme.MarsPhotosTheme
+import android.app.DatePickerDialog
+import com.example.marsphotos.ui.CalendarScreen
+import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -51,6 +54,7 @@ class MainActivity : ComponentActivity() {
                             MainContent(
                                 viewModel = lunchViewModel,
                                 onAddClick = { currentScreen = "add" },
+                                onCalendarClick = { currentScreen = "calendar" },
                                 onLunchClick = { lunch ->
                                     lunchViewModel.onLunchSelected(lunch)
                                     currentScreen = "detail"
@@ -70,6 +74,14 @@ class MainActivity : ComponentActivity() {
                                 onEditClick = { currentScreen = "add" }
                             )
                         }
+                        "calendar" -> CalendarScreen(
+                            viewModel = lunchViewModel,
+                            onBack = { currentScreen = "main" },
+                            onLunchClick = { lunch ->
+                                lunchViewModel.onLunchSelected(lunch)
+                                currentScreen = "detail"
+                            }
+                        )
                     }
                 }
             }
@@ -89,47 +101,84 @@ enum class SortOption(val title: String) {
 fun MainContent(
     viewModel: LunchViewModel,
     onAddClick: () -> Unit,
+    onCalendarClick: () -> Unit,
     onLunchClick: (LunchEntity) -> Unit
 ) {
+    var selectedDate by remember { mutableStateOf<Long?>(null) }
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     var currentCategory by remember { mutableStateOf("すべて") }
     var expanded by remember { mutableStateOf(false) }
     var currentSort by remember { mutableStateOf(SortOption.LATEST) }
     var sortExpanded by remember { mutableStateOf(false) }
 
+    val calendar = Calendar.getInstance()
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            calendar.set(year, month, dayOfMonth)
+            selectedDate = calendar.timeInMillis
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+
     val categories = remember(viewModel.lunchList.toList()) {
         listOf("すべて") + viewModel.lunchList.map { it.category }.distinct()
     }
 
-    val filteredList = remember(currentCategory, searchQuery, currentSort, viewModel.lunchList.toList()) {
-        val genreFiltered = if (currentCategory == "すべて") {
+    val filteredList = remember(
+        currentCategory,
+        searchQuery,
+        currentSort,
+        viewModel.lunchList.toList(),
+        viewModel.filterDate
+    ) {
+
+        val categoryFiltered = if (currentCategory == "すべて") {
             viewModel.lunchList
         } else {
             viewModel.lunchList.filter { it.category == currentCategory }
         }
 
         val searchFiltered = if (searchQuery.isBlank()) {
-            genreFiltered
+            categoryFiltered
         } else {
-            genreFiltered.filter { lunch ->
+            categoryFiltered.filter { lunch ->
                 lunch.name.contains(searchQuery, ignoreCase = true) ||
                         lunch.comment.contains(searchQuery, ignoreCase = true)
             }
         }
 
+        val dateFiltered = viewModel.filterDate?.let { selectedDate ->
+            searchFiltered.filter {
+                it.date == selectedDate
+            }
+        } ?: searchFiltered
+
         when (currentSort) {
-            SortOption.LATEST -> searchFiltered.sortedByDescending { it.id }
-            SortOption.OLDEST -> searchFiltered.sortedBy { it.id }
-            SortOption.NAME -> searchFiltered.sortedBy { it.name }
-            SortOption.RATING -> searchFiltered.sortedByDescending { it.rating }
+            SortOption.LATEST -> dateFiltered.sortedByDescending { it.id }
+            SortOption.OLDEST -> dateFiltered.sortedBy { it.id }
+            SortOption.NAME -> dateFiltered.sortedBy { it.name }
+            SortOption.RATING -> dateFiltered.sortedByDescending { it.rating }
         }
     }
 
     Scaffold(
         topBar = { CenterAlignedTopAppBar(title = { Text("ランチログ") }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Text("+", style = MaterialTheme.typography.headlineMedium)
+            Row {
+                FloatingActionButton(
+                    onClick = onCalendarClick
+                ) {
+                    Text("📅")
+                }
+
+                FloatingActionButton(onClick = onAddClick) {
+                    Text("+", style = MaterialTheme.typography.headlineMedium)
+                }
             }
         }
     ) { innerPadding ->

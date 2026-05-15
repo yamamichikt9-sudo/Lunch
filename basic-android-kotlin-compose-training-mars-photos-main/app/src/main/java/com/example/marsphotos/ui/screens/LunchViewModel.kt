@@ -46,6 +46,7 @@ class LunchViewModel(
     var dateInput by mutableStateOf(System.currentTimeMillis())
         private set
 
+    var filterDate by mutableStateOf<Long?>(null)
 
     // --- データのリスト ---
     // 重複していた宣言を1つにまとめました
