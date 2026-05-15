@@ -48,6 +48,9 @@ class LunchViewModel(
 
     var filterDate by mutableStateOf<Long?>(null)
 
+    var reactionsInput by mutableStateOf<List<String>>(emptyList())
+
+
     // --- データのリスト ---
     // 重複していた宣言を1つにまとめました
     val lunchList = mutableStateListOf<LunchEntity>()
@@ -75,6 +78,9 @@ class LunchViewModel(
 
     // --- 各入力項目の更新用関数 ---
     fun updateName(newName: String) { nameInput = newName }
+    fun updateReactions(reactions: List<String>) {
+        reactionsInput = reactions
+    }
     fun updateAddress(newAddress: String) { addressInput = newAddress }
     fun updatePhoneNumber(input: String) { phoneNumberInput = input }
     fun updateRating(newRating: Float) { ratingInput = newRating }
@@ -131,7 +137,8 @@ class LunchViewModel(
             category = selectedGenre,
             comment = commentInput,
             photoUrl = photoUriInput ?: "",
-            date = dateInput
+            date = dateInput,
+            reactions = reactionsInput
         )
 
         viewModelScope.launch {
