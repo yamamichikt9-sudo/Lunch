@@ -35,6 +35,7 @@ import com.example.marsphotos.ui.screens.LunchViewModel
 import com.example.marsphotos.ui.theme.MarsPhotosTheme
 import android.app.DatePickerDialog
 import com.example.marsphotos.ui.CalendarScreen
+import com.example.marsphotos.ui.components.LunchCard
 import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
@@ -152,9 +153,19 @@ fun MainContent(
             }
         }
 
-        val dateFiltered = viewModel.filterDate?.let { selectedDate ->
-            searchFiltered.filter {
-                it.date == selectedDate
+        val dateFiltered = viewModel.filterDate?.let { selected ->
+            searchFiltered.filter { lunch ->
+
+                val c1 = Calendar.getInstance().apply {
+                    timeInMillis = lunch.date
+                }
+
+                val c2 = Calendar.getInstance().apply {
+                    timeInMillis = selected
+                }
+
+                c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) &&
+                        c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)
             }
         } ?: searchFiltered
 
@@ -276,7 +287,17 @@ fun LunchDetailContent(
     onBack: () -> Unit,
     onEditClick: () -> Unit
 ) {
-    val lunch = viewModel.selectedLunch ?: return
+    val lunch = viewModel.selectedLunch
+
+    if (lunch == null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("データが選択されていません")
+        }
+        return
+    }
     val context = LocalContext.current // マップ起動用
 
     var showMenu by remember { mutableStateOf(false) }
@@ -409,41 +430,6 @@ fun LunchDetailContent(
 
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("一覧に戻る") }
-            }
-        }
-    }
-}
-
-@Composable
-fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column {
-            Image(
-                painter = rememberAsyncImagePainter(lunch.photoUrl),
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(180.dp),
-                contentScale = ContentScale.Crop
-            )
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
-                    Badge { Text(lunch.category) }
-                }
-                Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                    repeat(5) { index ->
-                        Icon(
-                            imageVector = Icons.Filled.Star,
-                            contentDescription = null,
-                            tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-                Text(text = lunch.comment, style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
             }
         }
     }

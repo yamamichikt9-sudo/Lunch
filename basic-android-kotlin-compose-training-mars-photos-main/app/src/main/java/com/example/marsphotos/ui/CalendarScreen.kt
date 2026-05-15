@@ -18,10 +18,8 @@ import java.util.*
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.rememberAsyncImagePainter
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.graphics.Color
-import com.example.marsphotos.LunchCard
+import com.example.marsphotos.ui.components.LunchCard
 import com.example.marsphotos.data.LunchEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,8 +38,11 @@ fun CalendarScreen(
         context,
         { _, year, month, dayOfMonth ->
             calendar.set(year, month, dayOfMonth)
-            selectedDate = calendar.timeInMillis
-            viewModel.filterDate = selectedDate
+
+            val selected = calendar.timeInMillis
+            selectedDate = selected
+
+            viewModel.setFilterDate(selected) // ←ここ！！
         },
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
@@ -68,7 +69,7 @@ fun CalendarScreen(
                 title = { Text("カレンダー検索") },
                 navigationIcon = {
                     IconButton(onClick = {
-                        viewModel.filterDate = null   // ← これ追加
+                        viewModel.setFilterDate(null)   // ← これ追加
                         onBack()
                     }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = null)

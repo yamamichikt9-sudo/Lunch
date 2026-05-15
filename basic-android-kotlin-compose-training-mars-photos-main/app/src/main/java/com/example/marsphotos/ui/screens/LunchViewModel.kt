@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 class LunchViewModel(
     private val lunchesRepository: LunchesRepository
 ) : ViewModel() {
@@ -46,7 +47,12 @@ class LunchViewModel(
     var dateInput by mutableStateOf(System.currentTimeMillis())
         private set
 
-    var filterDate by mutableStateOf<Long?>(null)
+    private val _filterDate = mutableStateOf<Long?>(null)
+    val filterDate: Long?
+        get() = _filterDate.value
+    fun setFilterDate(date: Long?) {
+        _filterDate.value = date
+    }
 
     // --- データのリスト ---
     // 重複していた宣言を1つにまとめました
