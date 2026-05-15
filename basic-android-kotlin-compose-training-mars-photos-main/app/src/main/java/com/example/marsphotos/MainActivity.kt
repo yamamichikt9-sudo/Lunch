@@ -346,8 +346,7 @@ fun LunchDetailContent(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().padding(innerPadding).verticalScroll(rememberScrollState())
         ) {
             Image(
                 painter = rememberAsyncImagePainter(lunch.photoUrl),
@@ -356,10 +355,7 @@ fun LunchDetailContent(
                 contentScale = ContentScale.Crop
             )
             Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(text = lunch.name, style = MaterialTheme.typography.headlineMedium)
                     Badge { Text(lunch.category) }
                 }
@@ -376,11 +372,7 @@ fun LunchDetailContent(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // --- 住所セクション（マップ連携ボタン付き） ---
-                Text(
-                    text = "📍 住所",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.Gray
-                )
+                Text(text = "📍 住所", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -408,39 +400,16 @@ fun LunchDetailContent(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "📞 電話番号",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.Gray
-                )
+                Text(text = "📞 電話番号", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
                 Text(text = lunch.phoneNumber?.ifBlank { "未登録" } ?: "未登録")
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "💬 コメント",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.Gray
-                )
+                Text(text = "💬 コメント", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
                 Text(text = lunch.comment.ifBlank { "コメントなし" })
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "📅 来店日",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.Gray
-                )
-
-                Text(
-                    text = formatDate(lunch.date)
-                )
-
-
 
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("一覧に戻る") }
             }
-
         }
     }
 }
@@ -478,8 +447,4 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
             }
         }
     }
-}
-private fun formatDate(time: Long): String {
-    val sdf = java.text.SimpleDateFormat("yyyy/MM/dd", java.util.Locale.getDefault())
-    return sdf.format(java.util.Date(time))
 }
