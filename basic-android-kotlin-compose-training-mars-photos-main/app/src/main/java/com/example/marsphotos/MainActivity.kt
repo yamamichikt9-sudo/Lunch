@@ -6,12 +6,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.collection.emptyObjectIntMap
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -100,29 +97,21 @@ fun MainContent(
     var currentSort by remember { mutableStateOf(SortOption.LATEST) }
     var sortExpanded by remember { mutableStateOf(false) }
 
-    var filterHasReaction by remember { mutableStateOf(false) }
-
     val categories = remember(viewModel.lunchList.toList()) {
         listOf("すべて") + viewModel.lunchList.map { it.category }.distinct()
     }
 
-    val filteredList = remember(currentCategory, filterHasReaction, searchQuery, currentSort, viewModel.lunchList.toList()) {
+    val filteredList = remember(currentCategory, searchQuery, currentSort, viewModel.lunchList.toList()) {
         val genreFiltered = if (currentCategory == "すべて") {
             viewModel.lunchList
         } else {
             viewModel.lunchList.filter { it.category == currentCategory }
         }
 
-        val reactionFiltered = if (filterHasReaction) {
-            genreFiltered.filter { lunch -> lunch.reactions.isNotEmpty() }
-        } else {
-            genreFiltered
-        }
-
         val searchFiltered = if (searchQuery.isBlank()) {
-            reactionFiltered
+            genreFiltered
         } else {
-            reactionFiltered.filter { lunch ->
+            genreFiltered.filter { lunch ->
                 lunch.name.contains(searchQuery, ignoreCase = true) ||
                         lunch.comment.contains(searchQuery, ignoreCase = true)
             }
@@ -196,69 +185,21 @@ fun MainContent(
                 }
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    label = { Text("キーワード検索") },
-                    placeholder = { Text("店名やコメントを入力") },
-                    singleLine = true,
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            Box(
-                                modifier = Modifier.padding(end = 12.dp)
-                                    .clickable { searchQuery = "" }) {
-                                Text(
-                                    text = "×",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-
-                IconToggleButton(
-                    checked = filterHasReaction,
-                    onCheckedChange = { filterHasReaction = it },
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .size(56.dp)
-                ) {
-                    if (filterHasReaction) {
-                        Box(
-                            contentAlignment = androidx.compose.ui.Alignment.Center,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    MaterialTheme.shapes.small
-                                )
-                        ) {
-                            Text("🔥", style = MaterialTheme.typography.titleLarge)
-                        }
-                    } else {
-                        Box(
-                            contentAlignment = androidx.compose.ui.Alignment.Center,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                    shape = MaterialTheme.shapes.small
-                                )
-                        ) {
-                            Text("🍚", style = MaterialTheme.typography.titleLarge)
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("キーワード検索") },
+                placeholder = { Text("店名やコメントを入力") },
+                singleLine = true,
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        Box(modifier = Modifier.padding(end = 12.dp).clickable { searchQuery = "" }) {
+                            Text(text = "×", style = MaterialTheme.typography.titleLarge, color = Color.Gray)
                         }
                     }
-                }
-            }
+                },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+            )
 
             if (filteredList.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -278,7 +219,6 @@ fun MainContent(
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -433,50 +373,17 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-            Box(modifier = Modifier.fillMaxWidth().height(180.dp)) {
-                Image(
-                    painter = rememberAsyncImagePainter(lunch.photoUrl),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-
-                if (lunch.reactions.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier
-                            .align(androidx.compose.ui.Alignment.TopStart)
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        lunch.reactions.forEach { emoji ->
-                            Box(
-                                contentAlignment = androidx.compose.ui.Alignment.Center,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        shape = androidx.compose.foundation.shape.CircleShape
-                                    )
-                            ) {
-                                Text(
-                                    text = emoji,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
+            Image(
+                painter = rememberAsyncImagePainter(lunch.photoUrl),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                contentScale = ContentScale.Crop
+            )
             Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
                     Badge { Text(lunch.category) }
                 }
-
                 Row(modifier = Modifier.padding(vertical = 4.dp)) {
                     repeat(5) { index ->
                         Icon(
@@ -487,15 +394,8 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
                         )
                     }
                 }
-
-                Text(
-                    text = lunch.comment,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.DarkGray
-                )
+                Text(text = lunch.comment, style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
             }
         }
     }
 }
-
-

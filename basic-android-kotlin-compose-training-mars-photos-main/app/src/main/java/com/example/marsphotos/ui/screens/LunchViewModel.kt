@@ -14,6 +14,9 @@ import com.example.marsphotos.MarsPhotosApplication
 import com.example.marsphotos.data.LunchEntity
 import com.example.marsphotos.data.LunchesRepository
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class LunchViewModel(
     private val lunchesRepository: LunchesRepository
@@ -40,6 +43,10 @@ class LunchViewModel(
     var editingLunchId: Int? by mutableStateOf(null)
         private set
 
+    var dateInput by mutableStateOf(System.currentTimeMillis())
+        private set
+
+
     // --- データのリスト ---
     // 重複していた宣言を1つにまとめました
     val lunchList = mutableStateListOf<LunchEntity>()
@@ -55,6 +62,12 @@ class LunchViewModel(
         }
     }
 
+    val groupedLunches: Map<String, List<LunchEntity>>
+        get() = lunchList.groupBy {
+            SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
+                .format(Date(it.date))
+        }
+
     // 保存ボタンの有効判定
     val canSave: Boolean
         get() = nameInput.isNotBlank()
@@ -67,6 +80,8 @@ class LunchViewModel(
     fun updateGenre(newGenre: String) { selectedGenre = newGenre }
     fun updateComment(newComment: String) { commentInput = newComment }
     fun updatePhoto(uri: String) { photoUriInput = uri }
+
+    fun updateDate(date: Long) { dateInput = date }
 
     fun onLunchSelected(lunch: LunchEntity) {
         selectedLunch = lunch
@@ -115,7 +130,7 @@ class LunchViewModel(
             category = selectedGenre,
             comment = commentInput,
             photoUrl = photoUriInput ?: "",
-            date = System.currentTimeMillis()
+            date = dateInput
         )
 
         viewModelScope.launch {
