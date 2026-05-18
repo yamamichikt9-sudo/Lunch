@@ -21,9 +21,11 @@ import com.example.marsphotos.ui.screens.LunchViewModel
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.draw.scale
 import android.app.DatePickerDialog
+import androidx.compose.foundation.layout.Arrangement
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.foundation.background
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,13 +33,15 @@ import java.util.Locale
 fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
+    var selectedReactions: Set<String> by remember { mutableStateOf(viewModel.reactionsInput.toSet())}
     // --- ダイアログの状態管理 ---
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     // 編集か新規かを判定
     val isEdit = viewModel.editingLunchId != null
     val dialogTitle = if (isEdit) "編集の確認" else "登録の確認"
-    val dialogMessage = if (isEdit) "この内容で上書き保存しますか？" else "この内容で登録しますがよろしいですか？"
+    val dialogMessage =
+        if (isEdit) "この内容で上書き保存しますか？" else "この内容で登録しますがよろしいですか？"
     val confirmButtonText = if (isEdit) "保存" else "登録"
 
     var expanded by remember { mutableStateOf(false) }
@@ -77,10 +81,15 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 TextButton(
                     onClick = {
                         showConfirmDialog = false
+
                         viewModel.photoUriInput?.let { originalUri ->
-                            val permanentUri = viewModel.saveImageToInternalStorage(context, originalUri)
+                            val permanentUri =
+                                viewModel.saveImageToInternalStorage(context, originalUri)
                             viewModel.updatePhoto(permanentUri)
                         }
+
+                        viewModel.updateReactions(selectedReactions.toList())
+
                         viewModel.saveLunch()
                         onBack()
                     }
@@ -136,7 +145,10 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
         ) {
             Spacer(modifier = Modifier.height(8.dp)) // 上に少し余裕
 
-            Text(text = if (isEdit) "ランチ編集" else "ランチ登録", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                text = if (isEdit) "ランチ編集" else "ランチ登録",
+                style = MaterialTheme.typography.headlineMedium
+            )
 
             // --- 画像選択 ---
             if (viewModel.photoUriInput == null) {
@@ -268,9 +280,70 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                     .height(120.dp)
             )
 
-            // ★ ここにあった元の Button は消去しました。代わりに Scaffold の bottomBar に配置しています。
+            Text(
+                text = " ",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 3.dp, bottom = 8.dp)
+            )
 
-            Spacer(modifier = Modifier.height(16.dp)) // スクロールした時の最後の余白
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                val availableReactions = listOf(
+                    "🔥" to "リピートしたい！",
+                    "👛" to "コスパがいい！",
+                    "✨" to "おしゃれ！",
+                    "🍖" to "ボリューム満点！"
+                )
+
+                availableReactions.forEach { (emoji, label) ->
+                    val isSelected = selectedReactions.contains(emoji)
+
+                    Row(
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+
+                        IconToggleButton(
+                            checked = isSelected,
+                            onCheckedChange = { checked ->
+                                selectedReactions = if (checked) {
+                                    selectedReactions + emoji
+                                } else {
+                                    selectedReactions - emoji
+                                }
+                            },
+                            modifier = Modifier.size(50.dp) // ボタンの大きさ
+                        ) {
+                            Box(
+                                contentAlignment = androidx.compose.ui.Alignment.Center,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
+                                            alpha = 0.4f
+                                        ),
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                                            8.dp)
+                                    )
+                            ) {
+                                Text(text = emoji, style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.DarkGray
+                        )
+                    }
+                }
+            } // ★ ここにあった元の Button は消去しました。代わりに Scaffold の bottomBar に配置しています。
+
+                Spacer(modifier = Modifier.height(32.dp)) // スクロールした時の最後の余白
+            }
         }
     }
-}

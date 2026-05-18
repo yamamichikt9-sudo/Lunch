@@ -13,7 +13,7 @@ import com.example.marsphotos.data.LunchDao
 import retrofit2.Converter
 
 
-@Database(entities = [LunchEntity::class], version = 2, exportSchema = false)
+@Database(entities = [LunchEntity::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
