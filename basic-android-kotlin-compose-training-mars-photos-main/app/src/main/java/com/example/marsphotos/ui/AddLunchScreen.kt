@@ -33,7 +33,7 @@ import androidx.compose.foundation.background
 fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    var selectedReactions by remember { mutableStateOf(setOf<String>()) }
+    var selectedReactions: Set<String> by remember { mutableStateOf(viewModel.reactionsInput.toSet())}
     // --- ダイアログの状態管理 ---
     var showConfirmDialog by remember { mutableStateOf(false) }
 
@@ -87,6 +87,9 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                                 viewModel.saveImageToInternalStorage(context, originalUri)
                             viewModel.updatePhoto(permanentUri)
                         }
+
+                        viewModel.updateReactions(selectedReactions.toList())
+
                         viewModel.saveLunch()
                         onBack()
                     }
@@ -306,11 +309,11 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
 
                         IconToggleButton(
                             checked = isSelected,
-                            onCheckedChange = {
-                                selectedReactions = if (isSelected) {
-                                    selectedReactions - emoji
-                                } else {
+                            onCheckedChange = { checked ->
+                                selectedReactions = if (checked) {
                                     selectedReactions + emoji
+                                } else {
+                                    selectedReactions - emoji
                                 }
                             },
                             modifier = Modifier.size(50.dp) // ボタンの大きさ
