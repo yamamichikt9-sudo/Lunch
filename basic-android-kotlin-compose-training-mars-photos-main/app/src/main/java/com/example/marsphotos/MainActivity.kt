@@ -37,6 +37,8 @@ import android.app.DatePickerDialog
 import com.example.marsphotos.ui.CalendarScreen
 import java.util.Calendar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -128,7 +130,7 @@ fun MainContent(
 
     var currentReactionFilter by remember { mutableStateOf("すべて") }
 
-    val categories = remember(viewModel.lunchList.toList()) {
+    val categories = remember(viewModel.lunchList.size) {
         listOf("すべて") + viewModel.lunchList.map { it.category }.distinct()
     }
 
@@ -137,7 +139,7 @@ fun MainContent(
         currentReactionFilter,
         searchQuery,
         currentSort,
-        viewModel.lunchList.toList(),
+        viewModel.lunchList.size,
         viewModel.filterDate
     ) {
         val categoryFiltered = if (currentCategory == "すべて") {
@@ -315,7 +317,7 @@ fun MainContent(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                     items(filteredList) { lunch ->
                         LunchCard(lunch = lunch, modifier = Modifier.clickable { onLunchClick(lunch) })
@@ -391,6 +393,7 @@ fun LunchDetailContent(
                                     onClick = {
                                         showMenu = false
                                         viewModel.prepareEdit(lunch)
+                                        viewModel.updateReactions(lunch.reactions)
                                         onEditClick()
                                     }
                                 )
@@ -420,11 +423,26 @@ fun LunchDetailContent(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = lunch.name, style = MaterialTheme.typography.headlineMedium)
-                        Badge { Text(lunch.category) }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Badge { Text(lunch.category) }
+
+                            if (lunch.reactions.isNotEmpty()) {
+                                Text(
+                                    text = lunch.reactions.joinToString(" "),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
                     }
+
                     Row(modifier = Modifier.padding(vertical = 8.dp)) {
                         repeat(5) { index ->
                             Icon(
@@ -515,11 +533,27 @@ fun LunchDetailContent(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
                         Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
-                        Badge { Text(lunch.category) }
+
+                        Row(
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
+                        ) {
+                            Badge { Text(lunch.category) }
+
+                            if (lunch.reactions.isNotEmpty()) {
+                                Text(
+                                    text = lunch.reactions.joinToString(" "),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
                     }
+
+
                     Row(modifier = Modifier.padding(vertical = 4.dp)) {
                         repeat(5) { index ->
                             Icon(
