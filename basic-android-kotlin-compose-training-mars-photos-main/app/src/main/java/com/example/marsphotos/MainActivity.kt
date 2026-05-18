@@ -533,12 +533,15 @@ fun LunchDetailContent(
                     Text(text = lunch.phoneNumber?.ifBlank { "未登録" } ?: "未登録")
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "💬 コメント",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.Gray
-                    )
-                    Text(text = lunch.comment.ifBlank { "コメントなし" })
+                    Text(text = "📅 登録日", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
+
+// ミリ秒（Long型）を「yyyy年MM月dd日」の文字に変換するロジック
+                    val formattedDate = remember(lunch.date) {
+                        val sdf = java.text.SimpleDateFormat("yyyy年MM月dd日", java.util.Locale.getDefault())
+                        sdf.format(java.util.Date(lunch.date))
+                    }
+
+                    Text(text = formattedDate)
 
                     Spacer(modifier = Modifier.height(32.dp))
                     Button(
