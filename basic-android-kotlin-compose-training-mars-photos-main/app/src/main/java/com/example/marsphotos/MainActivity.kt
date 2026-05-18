@@ -35,7 +35,6 @@ import com.example.marsphotos.ui.screens.LunchViewModel
 import com.example.marsphotos.ui.theme.MarsPhotosTheme
 import android.app.DatePickerDialog
 import com.example.marsphotos.ui.CalendarScreen
-import com.example.marsphotos.ui.components.LunchCard
 import java.util.Calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -164,19 +163,9 @@ fun MainContent(
             }
         }
 
-        val dateFiltered = viewModel.filterDate?.let { selected ->
-            searchFiltered.filter { lunch ->
-
-                val c1 = Calendar.getInstance().apply {
-                    timeInMillis = lunch.date
-                }
-
-                val c2 = Calendar.getInstance().apply {
-                    timeInMillis = selected
-                }
-
-                c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) &&
-                        c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)
+        val dateFiltered = viewModel.filterDate?.let { selectedDate ->
+            searchFiltered.filter {
+                it.date == selectedDate
             }
         } ?: searchFiltered
 
@@ -329,15 +318,17 @@ fun MainContent(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                ) {
                     items(filteredList) { lunch ->
                         LunchCard(lunch = lunch, modifier = Modifier.clickable { onLunchClick(lunch) })
-                        }
                     }
                 }
             }
         }
     }
+}
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -346,17 +337,7 @@ fun LunchDetailContent(
     onBack: () -> Unit,
     onEditClick: () -> Unit
 ) {
-    val lunch = viewModel.selectedLunch
-
-    if (lunch == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("データが選択されていません")
-        }
-        return
-    }
+    val lunch = viewModel.selectedLunch ?: return
     val context = LocalContext.current // マップ起動用
 
     var showMenu by remember { mutableStateOf(false) }
@@ -379,236 +360,218 @@ fun LunchDetailContent(
                 ) {
                     Text("削除", color = Color.Red)
                 }
-                            },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
-                        Text("キャンセル")
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("詳細情報") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "戻る")
+                    }
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "メニュー"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("編集") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.prepareEdit(lunch)
+                                    viewModel.updateReactions(lunch.reactions)
+                                    onEditClick()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("削除", color = Color.Red) },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteDialog = true
+                                }
+                            )
+                        }
                     }
                 }
             )
         }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(lunch.photoUrl),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(250.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = lunch.name, style = MaterialTheme.typography.headlineMedium)
 
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("詳細情報") },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "戻る")
-                        }
-                    },
-                    actions = {
-                        Box {
-                            IconButton(onClick = { showMenu = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "メニュー"
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("編集") },
-                                    onClick = {
-                                        showMenu = false
-                                        viewModel.prepareEdit(lunch)
-                                        viewModel.updateReactions(lunch.reactions)
-                                        onEditClick()
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("削除", color = Color.Red) },
-                                    onClick = {
-                                        showMenu = false
-                                        showDeleteDialog = true
-                                    }
-                                )
-                            }
-                        }
-                    }
-                )
-            }
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                Image(
-                    painter = rememberAsyncImagePainter(lunch.photoUrl),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(250.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(text = lunch.name, style = MaterialTheme.typography.headlineMedium)
+                        Badge { Text(lunch.category) }
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Badge { Text(lunch.category) }
-
-                            if (lunch.reactions.isNotEmpty()) {
-                                Text(
-                                    text = lunch.reactions.joinToString(" "),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
-                    }
-
-                    Row(modifier = Modifier.padding(vertical = 8.dp)) {
-                        repeat(5) { index ->
-                            Icon(
-                                imageVector = Icons.Filled.Star,
-                                contentDescription = null,
-                                tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
-                                modifier = Modifier.size(24.dp)
+                        if (lunch.reactions.isNotEmpty()) {
+                            Text(
+                                text = lunch.reactions.joinToString(" "),
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
                     }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
 
-<<<<<<< HEAD
+                Row(modifier = Modifier.padding(vertical = 8.dp)) {
+                    repeat(5) { index ->
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // --- 住所セクション（マップ連携ボタン付き） ---
+                Text(
+                    text = "📍 住所",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.Gray
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = lunch.address.ifBlank { "未登録" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (lunch.address.isNotBlank()) {
+                        IconButton(
+                            onClick = {
+                                val uri = Uri.parse("geo:0,0?q=${lunch.address}")
+                                val intent = Intent(Intent.ACTION_VIEW, uri)
+                                intent.setPackage("com.google.android.apps.maps")
+                                context.startActivity(intent)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = "マップで見る",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "📞 電話番号", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
+                Text(
+                    text = "📞 電話番号",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.Gray
+                )
                 Text(text = lunch.phoneNumber?.ifBlank { "未登録" } ?: "未登録")
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(text = "💬 コメント", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
-                Text(text = lunch.comment.ifBlank { "コメントなし" })
+                Text(text = "📅 登録日", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
+
+// ミリ秒（Long型）を「yyyy年MM月dd日」の文字に変換するロジック
+                val formattedDate = remember(lunch.date) {
+                    val sdf = java.text.SimpleDateFormat("yyyy年MM月dd日", java.util.Locale.getDefault())
+                    sdf.format(java.util.Date(lunch.date))
+                }
+
+                Text(text = formattedDate)
 
                 Spacer(modifier = Modifier.height(32.dp))
-                Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("一覧に戻る") }
+                Button(
+                    onClick = onBack,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("一覧に戻る") }
             }
         }
     }
 }
-=======
-                    // --- 住所セクション（マップ連携ボタン付き） ---
-                    Text(
-                        text = "📍 住所",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.Gray
-                    )
+
+@Composable
+fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column {
+            Image(
+                painter = rememberAsyncImagePainter(lunch.photoUrl),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
+
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
                     ) {
-                        Text(
-                            text = lunch.address.ifBlank { "未登録" },
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (lunch.address.isNotBlank()) {
-                            IconButton(
-                                onClick = {
-                                    val uri = Uri.parse("geo:0,0?q=${lunch.address}")
-                                    val intent = Intent(Intent.ACTION_VIEW, uri)
-                                    intent.setPackage("com.google.android.apps.maps")
-                                    context.startActivity(intent)
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Place,
-                                    contentDescription = "マップで見る",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
+                        Badge { Text(lunch.category) }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "📞 電話番号",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.Gray
-                    )
-                    Text(text = lunch.phoneNumber?.ifBlank { "未登録" } ?: "未登録")
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "📅 登録日", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
-
-// ミリ秒（Long型）を「yyyy年MM月dd日」の文字に変換するロジック
-                    val formattedDate = remember(lunch.date) {
-                        val sdf = java.text.SimpleDateFormat("yyyy年MM月dd日", java.util.Locale.getDefault())
-                        sdf.format(java.util.Date(lunch.date))
-                    }
-
-                    Text(text = formattedDate)
-
-                    Spacer(modifier = Modifier.height(32.dp))
-                    Button(
-                        onClick = onBack,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("一覧に戻る") }
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column {
-                Image(
-                    painter = rememberAsyncImagePainter(lunch.photoUrl),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(180.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                    ) {
-                        Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
-
-                        Row(
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
-                        ) {
-                            Badge { Text(lunch.category) }
-
-                            if (lunch.reactions.isNotEmpty()) {
-                                Text(
-                                    text = lunch.reactions.joinToString(" "),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
-                    }
-
-
-                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                        repeat(5) { index ->
-                            Icon(
-                                imageVector = Icons.Filled.Star,
-                                contentDescription = null,
-                                tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
-                                modifier = Modifier.size(18.dp)
+                        if (lunch.reactions.isNotEmpty()) {
+                            Text(
+                                text = lunch.reactions.joinToString(" "),
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
                     }
-                    Text(
-                        text = lunch.comment,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.DarkGray
-                    )
                 }
+
+
+                Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                    repeat(5) { index ->
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = lunch.comment,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
+                )
             }
         }
     }
-
->>>>>>> 91ac273183f0dace6a1246bf0d369e9fb9960126
+}
