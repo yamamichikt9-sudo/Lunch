@@ -170,8 +170,8 @@ fun MainContent(
         } ?: searchFiltered
 
         when (currentSort) {
-            SortOption.LATEST -> dateFiltered.sortedByDescending { it.id }
-            SortOption.OLDEST -> dateFiltered.sortedBy { it.id }
+            SortOption.LATEST -> dateFiltered.sortedWith(compareByDescending<LunchEntity> { it.date }.thenByDescending { it.id })
+            SortOption.OLDEST -> dateFiltered.sortedWith(compareBy<LunchEntity> { it.date }.thenBy { it.id })
             SortOption.NAME -> dateFiltered.sortedBy { it.name }
             SortOption.RATING -> dateFiltered.sortedByDescending { it.rating }
         }
@@ -277,19 +277,20 @@ fun MainContent(
                     modifier = Modifier.weight(1f)
                 )
 
+
                 var filterOptions = listOf("すべて", "🔥", "👛", "✨", "🍖")
 
                 IconButton(
                     onClick = {
                         val currentIndex = filterOptions.indexOf(currentReactionFilter)
                         val nextIndex = (currentIndex + 1) % filterOptions.size
-                        currentReactionFilter = filterOptions[nextIndex]
+                        currentReactionFilter = (filterOptions[nextIndex])
                     },
                     modifier = Modifier
                         .padding(top = 8.dp) // 上のラベルと高さを揃える
                         .size(56.dp)        // 入力欄と同じ高さ
                 ) {
-                    val isFiltered = currentReactionFilter != "すべて"
+                    val isFiltered =currentReactionFilter != "すべて"
                     Box(
                         contentAlignment = androidx.compose.ui.Alignment.Center,
                         modifier = Modifier

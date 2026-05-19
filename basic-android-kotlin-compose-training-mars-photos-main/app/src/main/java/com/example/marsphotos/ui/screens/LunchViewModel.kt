@@ -57,6 +57,7 @@ class LunchViewModel(
     var reactionsInput by mutableStateOf<List<String>>(emptyList())
 
 
+
     // --- データのリスト ---
     // 重複していた宣言を1つにまとめました
     val lunchList = mutableStateListOf<LunchEntity>()
@@ -116,6 +117,7 @@ class LunchViewModel(
         ratingInput = lunch.rating.toFloat()
         commentInput = lunch.comment
         photoUriInput = lunch.photoUrl
+        reactionsInput = lunch.reactions
     }
 
     // 入力フィールドを空にする
@@ -127,6 +129,7 @@ class LunchViewModel(
         ratingInput = 0f
         commentInput = ""
         photoUriInput = null
+        reactionsInput = emptyList()
     }
 
     // --- DB操作 ---
