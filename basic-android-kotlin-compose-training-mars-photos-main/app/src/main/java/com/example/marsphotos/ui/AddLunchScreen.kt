@@ -292,10 +292,16 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
             ) {
 
                 val availableReactions = listOf(
-                    "🔥" to "リピートしたい！",
+                    "💖" to "リピートしたい！",
                     "👛" to "コスパがいい！",
                     "✨" to "おしゃれ！",
-                    "🍖" to "ボリューム満点！"
+                    "🍖" to "ボリューム満点！",
+                    "🍀" to "ヘルシー！",
+                    "🏃‍♂️‍➡️" to "提供が早い！",
+                    "💔" to "リピなし",
+                    "💸" to "高すぎる",
+                    "⌛" to "提供が遅い",
+                    "😖" to "口に合わない"
                 )
 
                 availableReactions.forEach { (emoji, label) ->

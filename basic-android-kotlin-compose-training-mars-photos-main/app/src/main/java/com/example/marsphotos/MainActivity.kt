@@ -278,7 +278,7 @@ fun MainContent(
                 )
 
 
-                var filterOptions = listOf("すべて", "🔥", "👛", "✨", "🍖")
+                var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖","🍀","🏃‍♂️‍➡️","💔","💸","⌛","😖")
 
                 IconButton(
                     onClick = {
