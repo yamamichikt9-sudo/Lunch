@@ -176,7 +176,16 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
             OutlinedTextField(
                 value = viewModel.nameInput,
                 onValueChange = { viewModel.updateName(it) },
-                label = { Text("店名") },
+                label = {
+                    Row {
+                        Text("店名")
+                        Text(
+                            text = " *必須",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodySmall // 少し小さくするとバランスが良いです
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
