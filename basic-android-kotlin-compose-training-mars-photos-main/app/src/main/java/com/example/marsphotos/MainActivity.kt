@@ -278,7 +278,8 @@ fun MainContent(
                 )
 
 
-                var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖","🍀","🏃‍♂️‍➡️","💔","💸","⌛","😖")
+
+                var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
 
                 IconButton(
                     onClick = {
@@ -521,6 +522,7 @@ fun LunchDetailContent(
 
 @Composable
 fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
+    val filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -548,8 +550,12 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
                         Badge { Text(lunch.category) }
 
                         if (lunch.reactions.isNotEmpty()) {
+                            val sortedReactions = lunch.reactions.sortedBy { emoji ->
+                                val index = filterOptions.indexOf(emoji.toString())
+                                if (index == -1) 999 else index // リストにない文字は後ろに回す
+                            }
                             Text(
-                                text = lunch.reactions.joinToString(" "),
+                                text = sortedReactions.joinToString(" "),
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
@@ -576,3 +582,4 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
         }
     }
 }
+
