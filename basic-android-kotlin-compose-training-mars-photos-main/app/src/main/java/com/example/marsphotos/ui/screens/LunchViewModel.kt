@@ -54,6 +54,28 @@ class LunchViewModel(
         _filterDate.value = date
     }
 
+    // --- 期間選択（フィルタ）の状態 ---
+    var startDateFilter by mutableStateOf<Long?>(null)
+        private set
+    var endDateFilter by mutableStateOf<Long?>(null)
+        private set
+
+    // 開始日を更新する関数
+    fun updateStartDate(date: Long?) {
+        startDateFilter = date
+    }
+
+    // 終了日を更新する関数
+    fun updateEndDate(date: Long?) {
+        endDateFilter = date
+    }
+
+    // 期間フィルターをリセットする関数
+    fun clearPeriodFilter() {
+        startDateFilter = null
+        endDateFilter = null
+    }
+
     var reactionsInput by mutableStateOf<List<String>>(emptyList())
 
 
