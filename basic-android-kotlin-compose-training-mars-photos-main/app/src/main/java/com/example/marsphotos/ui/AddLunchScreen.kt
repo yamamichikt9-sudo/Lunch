@@ -26,6 +26,20 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.ui.unit.sp
+
+
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,7 +47,7 @@ import androidx.compose.foundation.background
 fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    var selectedReactions: Set<String> by remember { mutableStateOf(viewModel.reactionsInput.toSet())}
+    var selectedReactions: Set<String> by remember { mutableStateOf(viewModel.reactionsInput.toSet()) }
     // --- ダイアログの状態管理 ---
     var showConfirmDialog by remember { mutableStateOf(false) }
 
@@ -289,70 +303,159 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                     .height(120.dp)
             )
 
-            Text(
-                text = " ",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 3.dp, bottom = 8.dp)
-            )
+            var isReactionExpanded by remember { mutableStateOf(false) }
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+
+            OutlinedButton(
+                onClick = { isReactionExpanded = !isReactionExpanded },
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+                shape = RoundedCornerShape(8.dp)
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(text = if (isReactionExpanded) "リアクション一覧を閉じる" else "🍚リアクションを追加",
+                    fontSize = 16.sp
+                    )
 
-                val availableReactions = listOf(
-                    "🔥" to "リピートしたい！",
-                    "👛" to "コスパがいい！",
-                    "✨" to "おしゃれ！",
-                    "🍖" to "ボリューム満点！"
-                )
+                    Icon(
+                        imageVector = if (isReactionExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
 
-                availableReactions.forEach { (emoji, label) ->
-                    val isSelected = selectedReactions.contains(emoji)
 
-                    Row(
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+            AnimatedVisibility(
+                visible = isReactionExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    val goodReactions = listOf(
+                        "💖" to "リピートしたい！",
+                        "👛" to "コスパがいい！",
+                        "✨" to "おしゃれ！",
+                        "🍖" to "ボリューム満点！",
+                        "🍀" to "ヘルシー！",
+                        "⚡️" to "提供が早い！"
+                    )
+                    val badReactions = listOf(
+                        "💔" to "リピなし",
+                        "💸" to "高すぎる",
+                        "⏳" to "提供が遅い",
+                        "😖" to "口に合わない"
+                    )
 
-                        IconToggleButton(
-                            checked = isSelected,
-                            onCheckedChange = { checked ->
-                                selectedReactions = if (checked) {
-                                    selectedReactions + emoji
-                                } else {
-                                    selectedReactions - emoji
-                                }
-                            },
-                            modifier = Modifier.size(50.dp) // ボタンの大きさ
-                        ) {
-                            Box(
-                                contentAlignment = androidx.compose.ui.Alignment.Center,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
-                                            alpha = 0.4f
-                                        ),
-                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                                            8.dp)
-                                    )
-                            ) {
-                                Text(text = emoji, style = MaterialTheme.typography.titleLarge)
-                            }
+
+                    // Goodのボックスを表示する命令
+                    ReactionSection(
+                        title = "Good 👍",
+                        reactions = goodReactions,
+                        selectedReactions = selectedReactions,
+                        onReactionChange = { emoji, isSelected ->
+                            selectedReactions =
+                                if (isSelected) selectedReactions + emoji else selectedReactions - emoji
                         }
+                    )
 
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.DarkGray
-                        )
+                    // Badのボックスを表示する命令
+                    ReactionSection(
+                        title = "Bad 👎",
+                        reactions = badReactions,
+                        selectedReactions = selectedReactions,
+                        onReactionChange = { emoji, isSelected ->
+                            selectedReactions =
+                                if (isSelected) selectedReactions + emoji else selectedReactions - emoji
+                        }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+
+@Composable
+fun ReactionSection(
+    title: String,
+    reactions: List<Pair<String, String>>,
+    selectedReactions: Set<String>,
+    onReactionChange: (String, Boolean) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(bottom = 6.dp, start = 4.dp)
+        )
+
+        // 四角い枠のボックス
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant, shape = RoundedCornerShape(12.dp))
+                .background(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f), shape = RoundedCornerShape(12.dp))
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // 元々の chunked(2) を使用した安全な配置
+            reactions.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    rowItems.forEach { (emoji, label) ->
+                        val isSelected = selectedReactions.contains(emoji)
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onReactionChange(emoji, !isSelected) }
+                                .padding(vertical = 6.dp, horizontal = 4.dp)
+                        ) {
+                            IconToggleButton(
+                                checked = isSelected,
+                                onCheckedChange = { checked -> onReactionChange(emoji, checked) },
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .aspectRatio(1F)
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.White,
+                                            shape = RoundedCornerShape(50)
+                                        )
+                                        .border(
+                                            width = 1.dp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
+                                            shape = RoundedCornerShape(50)
+                                        )
+                                ) {
+                                    Text(text = emoji, style = MaterialTheme.typography.titleMedium)
+                                }
+                            }
+                            Text(text = label, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                        }
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
-            } // ★ ここにあった元の Button は消去しました。代わりに Scaffold の bottomBar に配置しています。
-
-                Spacer(modifier = Modifier.height(32.dp)) // スクロールした時の最後の余白
             }
         }
     }
+}
+
+
