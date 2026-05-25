@@ -38,7 +38,6 @@ import com.example.marsphotos.ui.CalendarScreen
 import java.util.Calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import com.example.marsphotos.ui.components.LunchCard
 
 
 class MainActivity : ComponentActivity() {
@@ -152,9 +151,12 @@ fun MainContent(
             if (currentCategory == "すべて") viewModel.lunchList else viewModel.lunchList.filter { it.category == currentCategory }
         // 2. リアクション
         val reactFiltered =
-            if (currentReactionFilter == "すべて") catFiltered else catFiltered.filter {
-                it.reactions.contains(currentReactionFilter)
-            }
+            if (currentReactionFilter == "すべて") {
+                catFiltered
+            }else{
+                    catFiltered.filter {lunch -> lunch.reactions.contains(currentReactionFilter) }
+                }
+
         // 3. 検索
         val searchFiltered = if (searchQuery.isBlank()) reactFiltered else reactFiltered.filter {
             it.name.contains(searchQuery, ignoreCase = true) || it.comment.contains(
@@ -322,36 +324,39 @@ fun MainContent(
                     }, modifier = Modifier.weight(1f)
                 )
 
-<<<<<<< HEAD
-                val filterOptions = listOf("すべて", "🔥", "👛", "✨", "🍖")
-=======
-
 
                 var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
 
->>>>>>> e1e0d7a221ea582930cb162e103ab005f99ca7bf
                 IconButton(
                     onClick = {
-                        val nextIdx =
-                            (filterOptions.indexOf(currentReactionFilter) + 1) % filterOptions.size
-                        currentReactionFilter = filterOptions[nextIdx]
+                        val currentIndex = filterOptions.indexOf(currentReactionFilter)
+                        val nextIndex = (currentIndex + 1) % filterOptions.size
+                        currentReactionFilter = (filterOptions[nextIndex])
                     },
-                    modifier = Modifier.size(56.dp).padding(top = 8.dp)
+                    modifier = Modifier
+                        .padding(top = 8.dp) // 上のラベルと高さを揃える
+                        .size(56.dp)        // 入力欄と同じ高さ
                 ) {
-                    val isFiltered = currentReactionFilter != "すべて"
+                    val isFiltered =currentReactionFilter != "すべて"
                     Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize().background(
-                            color = if (isFiltered) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.6f
-                            ),
-                            shape = MaterialTheme.shapes.small
-                        )
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                color = if (isFiltered) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                shape = MaterialTheme.shapes.small
+                            )
                     ) {
-                        Text(if (isFiltered) currentReactionFilter else "🍚")
+                        Text(
+                            text = if (isFiltered) currentReactionFilter else "🍚",
+                            style = MaterialTheme.typography.titleLarge
+                        )
                     }
                 }
             }
+
+
 
             // --- D. リスト ---
             if (filteredList.isEmpty()) {
@@ -572,13 +577,12 @@ fun MainContent(
             }
         }
     }
-<<<<<<< HEAD
-=======
-}
+
 
 @Composable
 fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
     val filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -597,56 +601,21 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                 ) {
-                    Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
->>>>>>> e1e0d7a221ea582930cb162e103ab005f99ca7bf
+                    Text(
+                        text = lunch.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
 
-    @Composable
-    fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column {
-                Image(
-                    painter = rememberAsyncImagePainter(lunch.photoUrl),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(180.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        modifier = Modifier.wrapContentWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
                     ) {
-                        Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
 
-<<<<<<< HEAD
-                        Row(
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
-                        ) {
-                            Badge { Text(lunch.category) }
-
-                            if (lunch.reactions.isNotEmpty()) {
-                                Text(
-                                    text = lunch.reactions.joinToString(" "),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
-                    }
+                        Badge { Text(lunch.category) }
 
 
-                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                        repeat(5) { index ->
-                            Icon(
-                                imageVector = Icons.Filled.Star,
-                                contentDescription = null,
-                                tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
-                                modifier = Modifier.size(18.dp)
-=======
                         if (lunch.reactions.isNotEmpty()) {
                             val sortedReactions = lunch.reactions.sortedBy { emoji ->
                                 val index = filterOptions.indexOf(emoji.toString())
@@ -655,21 +624,29 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
                             Text(
                                 text = sortedReactions.joinToString(" "),
                                 style = MaterialTheme.typography.titleMedium
->>>>>>> e1e0d7a221ea582930cb162e103ab005f99ca7bf
                             )
                         }
                     }
-                    Text(
-                        text = lunch.comment,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.DarkGray
-                    )
                 }
+
+
+                Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                    repeat(5) { index ->
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = lunch.comment,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
+                )
             }
         }
     }
-<<<<<<< HEAD
-=======
 }
->>>>>>> e1e0d7a221ea582930cb162e103ab005f99ca7bf
 
