@@ -132,6 +132,7 @@ fun MainContent(
     )
 
     var currentReactionFilter by remember { mutableStateOf("すべて") }
+    var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
 
     val categories = remember(viewModel.lunchList.size) {
         listOf("すべて") + viewModel.lunchList.map { it.category }.distinct()
@@ -322,14 +323,7 @@ fun MainContent(
                     }, modifier = Modifier.weight(1f)
                 )
 
-<<<<<<< HEAD
-                val filterOptions = listOf("すべて", "🔥", "👛", "✨", "🍖")
-=======
 
-
-                var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
-
->>>>>>> e1e0d7a221ea582930cb162e103ab005f99ca7bf
                 IconButton(
                     onClick = {
                         val nextIdx =
@@ -572,33 +566,7 @@ fun MainContent(
             }
         }
     }
-<<<<<<< HEAD
-=======
-}
 
-@Composable
-fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
-    val filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column {
-            Image(
-                painter = rememberAsyncImagePainter(lunch.photoUrl),
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(180.dp),
-                contentScale = ContentScale.Crop
-            )
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                ) {
-                    Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
->>>>>>> e1e0d7a221ea582930cb162e103ab005f99ca7bf
 
     @Composable
     fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
@@ -621,55 +589,11 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
                         Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
-
-<<<<<<< HEAD
-                        Row(
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
-                        ) {
-                            Badge { Text(lunch.category) }
-
-                            if (lunch.reactions.isNotEmpty()) {
-                                Text(
-                                    text = lunch.reactions.joinToString(" "),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
                     }
-
-
-                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                        repeat(5) { index ->
-                            Icon(
-                                imageVector = Icons.Filled.Star,
-                                contentDescription = null,
-                                tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
-                                modifier = Modifier.size(18.dp)
-=======
-                        if (lunch.reactions.isNotEmpty()) {
-                            val sortedReactions = lunch.reactions.sortedBy { emoji ->
-                                val index = filterOptions.indexOf(emoji.toString())
-                                if (index == -1) 999 else index // リストにない文字は後ろに回す
-                            }
-                            Text(
-                                text = sortedReactions.joinToString(" "),
-                                style = MaterialTheme.typography.titleMedium
->>>>>>> e1e0d7a221ea582930cb162e103ab005f99ca7bf
-                            )
-                        }
-                    }
-                    Text(
-                        text = lunch.comment,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.DarkGray
-                    )
                 }
             }
         }
     }
-<<<<<<< HEAD
-=======
-}
->>>>>>> e1e0d7a221ea582930cb162e103ab005f99ca7bf
+
+
 
