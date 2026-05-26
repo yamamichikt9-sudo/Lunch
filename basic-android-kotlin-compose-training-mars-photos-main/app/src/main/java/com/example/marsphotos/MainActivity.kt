@@ -157,11 +157,14 @@ fun MainContent(
                 it.reactions.contains(currentReactionFilter)
             }
         // 3. 検索
-        val searchFiltered = if (searchQuery.isBlank()) reactFiltered else reactFiltered.filter {
-            it.name.contains(searchQuery, ignoreCase = true) || it.comment.contains(
-                searchQuery,
-                ignoreCase = true
-            )
+        val searchFiltered = if (searchQuery.isBlank()) {
+            reactFiltered
+        } else {
+            reactFiltered.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                        it.comment.contains(searchQuery, ignoreCase = true) ||
+                        it.address.contains(searchQuery, ignoreCase = true) // ← ここを追加！
+            }
         }
         // 4. 期間
         val periodFiltered = searchFiltered.filter { lunch ->
