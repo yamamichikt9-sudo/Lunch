@@ -66,6 +66,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
+    // 🌐 インターネット通信を行うためのライブラリ
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    // 📄 届いたデータ（JSON）をKotlinのデータに自動変換するライブラリ
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
     // Retrofit & Serialization
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")

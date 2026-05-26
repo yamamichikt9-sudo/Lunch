@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.marsphotos.MarsPhotosApplication
 import com.example.marsphotos.data.LunchEntity
 import com.example.marsphotos.data.LunchesRepository
+import com.example.marsphotos.data.ShopApi
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -23,44 +24,40 @@ class LunchViewModel(
 ) : ViewModel() {
 
     // --- 入力フォームの状態 ---
+    // 💡 外部（ダイアログ選択時など）から自動入力できるように private set を外しました！
     var nameInput by mutableStateOf("")
-        private set
     var addressInput by mutableStateOf("")
-        private set
     var phoneNumberInput by mutableStateOf("")
-        private set
     var selectedGenre by mutableStateOf("和食")
-        private set
     var ratingInput by mutableStateOf(0f)
-        private set
     var commentInput by mutableStateOf("")
-        private set
     var photoUriInput by mutableStateOf<String?>(null)
-        private set
     var selectedLunch by mutableStateOf<LunchEntity?>(null)
-        private set
-    // 1. 今「編集」しているのか「新規」なのかを判断するIDを保持
+
+    // 今「編集」しているのか「新規」なのかを判断するIDを保持
     var editingLunchId: Int? by mutableStateOf(null)
-        private set
 
     var dateInput by mutableStateOf(System.currentTimeMillis())
-        private set
 
     var filterDate by mutableStateOf<Long?>(null)
 
     var reactionsInput by mutableStateOf<List<String>>(emptyList())
 
+    // 🔍 検索されたお店の候補リストを一時的に保存する変数
+    var searchCandidates = mutableStateListOf<com.example.marsphotos.data.ShopSearchItem>()
+        private set
+
+    // ❓ お店が見つからなかったときに、救済ダイアログを表示するためのフラグ（重複を削除してここに集約！）
+    var showNoResultDialog by mutableStateOf(false)
+        private set
 
     // --- データのリスト ---
-    // 重複していた宣言を1つにまとめました
     val lunchList = mutableStateListOf<LunchEntity>()
 
     init {
         viewModelScope.launch {
-            // リポジトリからデータを取得してリストに反映させる
             lunchesRepository.getAllLunchesStream().collect { items ->
                 lunchList.clear()
-                // 新しいデータが上に来るように逆順で追加
                 lunchList.addAll(items.reversed())
             }
         }
@@ -78,38 +75,101 @@ class LunchViewModel(
 
     // --- 各入力項目の更新用関数 ---
     fun updateName(newName: String) { nameInput = newName }
-    fun updateReactions(reactions: List<String>) {
-        reactionsInput = reactions
-    }
+    fun updateReactions(reactions: List<String>) { reactionsInput = reactions }
     fun updateAddress(newAddress: String) { addressInput = newAddress }
     fun updatePhoneNumber(input: String) { phoneNumberInput = input }
     fun updateRating(newRating: Float) { ratingInput = newRating }
     fun updateGenre(newGenre: String) { selectedGenre = newGenre }
     fun updateComment(newComment: String) { commentInput = newComment }
     fun updatePhoto(uri: String) { photoUriInput = uri }
-
     fun updateDate(date: Long) { dateInput = date }
+
+    // 🌐 店名から本物の住所・電話番号を検索する関数（キーワード優先・並び替え版）
+    fun searchAndAutoFillShop(context: android.content.Context) {
+        val trimmedKeyword = nameInput.trim()
+        if (trimmedKeyword.isBlank()) return
+
+        searchCandidates.clear()
+
+        viewModelScope.launch {
+            try {
+                val response = ShopApi.retrofitService.searchShop(keyword = trimmedKeyword)
+
+                if (response.isNotEmpty()) {
+                    // 💡 【ここを強化！】
+                    // ユーザーが入力した文字（例：日野市）が、住所（displayName）の中に
+                    // 含まれているものを一番上（trueが先）に持ってくるように自動で並び替える！
+                    val sortedList = response.sortedByDescending { item ->
+                        // 入力されたキーワードの一部分（地名など）が住所に含まれているか判定
+                        // 全体の店名だと一致しにくいので、スペースで区切られた単語が含まれているかでチェックすると賢いです
+                        trimmedKeyword.split(" ", " ").any { word ->
+                            item.displayName.contains(word)
+                        }
+                    }
+
+                    searchCandidates.addAll(sortedList)
+                } else {
+                    android.widget.Toast.makeText(
+                        context,
+                        "自動入力できませんでした。手動で入力してください。",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(
+                    context,
+                    "自動入力できませんでした。手動で入力してください。",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    // 救済ダイアログを閉じるための関数
+    fun dismissNoResultDialog() {
+        showNoResultDialog = false
+    }
+
+    // ユーザーが候補の中から「この店！」と選んだときに呼び出す関数
+    fun selectCandidate(item: com.example.marsphotos.data.ShopSearchItem) {
+        // ① 選ばれたお店の正式名称と住所をそのまま住所欄へ
+        addressInput = item.displayName
+
+        // ② 電話番号を取り出して入力
+        val telNumber = item.extratags?.phone
+            ?: item.extratags?.contactPhone
+            ?: ""
+        phoneNumberInput = telNumber
+
+        // ③ 用が済んだので、候補リストを空にしてダイアログを自動で閉じさせる
+        searchCandidates.clear()
+    }
+
+    // ダイアログをキャンセルした時に候補リストをクリアする用
+    fun clearCandidates() {
+        searchCandidates.clear()
+    }
 
     fun onLunchSelected(lunch: LunchEntity) {
         selectedLunch = lunch
-        // ここで「画面を詳細へ切り替える」命令をUIに出す
     }
 
-    // 詳細画面から戻るときなどに、選択を解除する関数
     fun clearSelectedLunch() {
         selectedLunch = null
     }
 
-    // 2. 編集ボタンを押したときに、今のデータを入力欄にセットする関数
+    // 編集ボタンを押したときに、今のデータを入力欄にセットする関数
     fun prepareEdit(lunch: LunchEntity) {
         editingLunchId = lunch.id
         nameInput = lunch.name
         addressInput = lunch.address ?: ""
         phoneNumberInput = lunch.phoneNumber ?: ""
         selectedGenre = lunch.category
-        ratingInput = lunch.rating.toFloat()
+        ratingInput = lunch.rating
         commentInput = lunch.comment
         photoUriInput = lunch.photoUrl
+        dateInput = lunch.date
+        reactionsInput = lunch.reactions
     }
 
     // 入力フィールドを空にする
@@ -121,13 +181,14 @@ class LunchViewModel(
         ratingInput = 0f
         commentInput = ""
         photoUriInput = null
+        dateInput = System.currentTimeMillis()
+        reactionsInput = emptyList()
     }
 
     // --- DB操作 ---
     fun saveLunch() {
         if (!canSave) return
 
-        // 編集なら元のIDを使い、新規なら0（自動採番）を使う
         val lunch = LunchEntity(
             id = editingLunchId ?: 0,
             name = nameInput,
@@ -143,15 +204,13 @@ class LunchViewModel(
 
         viewModelScope.launch {
             if (editingLunchId == null) {
-                // 新規登録
                 lunchesRepository.insertLunch(lunch)
             } else {
-                // ★編集保存（上書き）
                 lunchesRepository.updateLunch(lunch)
             }
 
-            resetInputs() // 保存完了後に入力をリセット
-            editingLunchId = null // 編集モードを終了
+            resetInputs()
+            editingLunchId = null
         }
     }
 
@@ -161,15 +220,10 @@ class LunchViewModel(
         }
     }
 
-    /**
-     * 選択された画像をアプリ専用の内部ストレージに保存し、新しいURIを返す
-     */
     fun saveImageToInternalStorage(context: android.content.Context, uriString: String): String {
         return try {
             val uri = android.net.Uri.parse(uriString)
             val inputStream = context.contentResolver.openInputStream(uri)
-
-            // ファイル名をユニークにする（例：lunch_1715650000.jpg）
             val fileName = "lunch_${System.currentTimeMillis()}.jpg"
             val file = java.io.File(context.filesDir, fileName)
 
@@ -178,15 +232,13 @@ class LunchViewModel(
                     input.copyTo(output)
                 }
             }
-            // コープした新しいファイルのURI（file://...）を文字列で返す
             android.net.Uri.fromFile(file).toString()
         } catch (e: Exception) {
             e.printStackTrace()
-            uriString // 失敗した場合は元のURIを返す（バックアップ策）
+            uriString
         }
     }
 
-    // ViewModelFactoryの設定
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -197,5 +249,3 @@ class LunchViewModel(
         }
     }
 }
-
-// MarsViewModel.kt 内

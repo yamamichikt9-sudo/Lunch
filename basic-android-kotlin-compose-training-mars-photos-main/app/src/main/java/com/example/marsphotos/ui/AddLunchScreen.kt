@@ -105,6 +105,59 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
         )
     }
 
+    // 👇 ここから「店舗候補選択ダイアログ」を新しく追加 👇
+    if (viewModel.searchCandidates.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearCandidates() },
+            title = {
+                Text(
+                    text = "該当する店舗を選択してください",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                // 候補が最大5件並ぶリストを作成
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    viewModel.searchCandidates.forEach { item ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    // タップされたお店の情報を入力欄に流し込む！
+                                    viewModel.selectCandidate(item)
+                                },
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp)
+                            ) {
+                                // 住所データは長いので、見やすくなるようにテキストで配置
+                                Text(
+                                    text = item.displayName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {}, // 選択肢をタップして確定させるため、確定ボタンは空っぽでOK
+            dismissButton = {
+                TextButton(onClick = { viewModel.clearCandidates() }) {
+                    Text("キャンセル")
+                }
+            }
+        )
+    }
+    // 👆 ここまでを追加 👆
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -179,6 +232,23 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 label = { Text("店名") },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // ✨ 新しい全自動入力ボタン（コメント欄を汚さない安全版）
+            Spacer(modifier = Modifier.height(4.dp))
+            Button(
+                onClick = {
+                    // 💡 画面の context をそのまま関数にパスしてあげることで、トーストが鳴らせます
+                    viewModel.searchAndAutoFillShop(context)
+                },
+                enabled = viewModel.nameInput.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Text("✨ 店名から住所・電話番号を自動入力")
+            }
 
             OutlinedTextField(
                 value = viewModel.addressInput,
