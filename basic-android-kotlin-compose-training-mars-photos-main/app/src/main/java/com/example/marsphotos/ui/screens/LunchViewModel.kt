@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 class LunchViewModel(
     private val lunchesRepository: LunchesRepository
 ) : ViewModel() {
@@ -39,7 +40,34 @@ class LunchViewModel(
 
     var dateInput by mutableStateOf(System.currentTimeMillis())
 
-    var filterDate by mutableStateOf<Long?>(null)
+    private val _filterDate = mutableStateOf<Long?>(null)
+    val filterDate: Long?
+        get() = _filterDate.value
+    fun setFilterDate(date: Long?) {
+        _filterDate.value = date
+    }
+
+    // --- 期間選択（フィルタ）の状態 ---
+    var startDateFilter by mutableStateOf<Long?>(null)
+        private set
+    var endDateFilter by mutableStateOf<Long?>(null)
+        private set
+
+    // 開始日を更新する関数
+    fun updateStartDate(date: Long?) {
+        startDateFilter = date
+    }
+
+    // 終了日を更新する関数
+    fun updateEndDate(date: Long?) {
+        endDateFilter = date
+    }
+
+    // 期間フィルターをリセットする関数
+    fun clearPeriodFilter() {
+        startDateFilter = null
+        endDateFilter = null
+    }
 
     var reactionsInput by mutableStateOf<List<String>>(emptyList())
 
@@ -50,6 +78,7 @@ class LunchViewModel(
     // ❓ お店が見つからなかったときに、救済ダイアログを表示するためのフラグ（重複を削除してここに集約！）
     var showNoResultDialog by mutableStateOf(false)
         private set
+
 
     // --- データのリスト ---
     val lunchList = mutableStateListOf<LunchEntity>()
@@ -168,7 +197,10 @@ class LunchViewModel(
         ratingInput = lunch.rating
         commentInput = lunch.comment
         photoUriInput = lunch.photoUrl
+<<<<<<< HEAD
         dateInput = lunch.date
+=======
+>>>>>>> 531436ecab80caa2fbd4ab16a374a80b5107bf0b
         reactionsInput = lunch.reactions
     }
 
@@ -181,7 +213,10 @@ class LunchViewModel(
         ratingInput = 0f
         commentInput = ""
         photoUriInput = null
+<<<<<<< HEAD
         dateInput = System.currentTimeMillis()
+=======
+>>>>>>> 531436ecab80caa2fbd4ab16a374a80b5107bf0b
         reactionsInput = emptyList()
     }
 

@@ -109,6 +109,8 @@ fun MainContent(
 ) {
     var selectedDate by remember { mutableStateOf<Long?>(null) }
     val context = LocalContext.current
+    val dateFormatter =
+        remember { java.text.SimpleDateFormat("yyyy/MM/dd", java.util.Locale.getDefault()) }
     var searchQuery by remember { mutableStateOf("") }
     var currentCategory by remember { mutableStateOf("すべて") }
     var expanded by remember { mutableStateOf(false) }
@@ -129,6 +131,7 @@ fun MainContent(
     )
 
     var currentReactionFilter by remember { mutableStateOf("すべて") }
+    var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
 
     val categories = remember(viewModel.lunchList.size) {
         listOf("すべて") + viewModel.lunchList.map { it.category }.distinct()
@@ -140,40 +143,47 @@ fun MainContent(
         searchQuery,
         currentSort,
         viewModel.lunchList.size,
-        viewModel.filterDate
+        viewModel.filterDate,
+        viewModel.startDateFilter,
+        viewModel.endDateFilter
     ) {
-        val categoryFiltered = if (currentCategory == "すべて") {
-            viewModel.lunchList
-        } else {
-            viewModel.lunchList.filter { it.category == currentCategory }
-        }
+        // 1. カテゴリ
+        val catFiltered =
+            if (currentCategory == "すべて") viewModel.lunchList else viewModel.lunchList.filter { it.category == currentCategory }
+        // 2. リアクション
+        val reactFiltered =
+            if (currentReactionFilter == "すべて") {
+                catFiltered
+            }else{
+                    catFiltered.filter {lunch -> lunch.reactions.contains(currentReactionFilter) }
+                }
 
-        val reactionFiltered = if (currentReactionFilter == "すべて") {
-            categoryFiltered
-        } else {
-            categoryFiltered.filter { lunch -> lunch.reactions.contains(currentReactionFilter) }
-        }
-
+        // 3. 検索
         val searchFiltered = if (searchQuery.isBlank()) {
-            reactionFiltered
+            reactFiltered
         } else {
-            reactionFiltered.filter { lunch ->
-                lunch.name.contains(searchQuery, ignoreCase = true) ||
-                        lunch.comment.contains(searchQuery, ignoreCase = true)
+            reactFiltered.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                        it.comment.contains(searchQuery, ignoreCase = true) ||
+                        it.address.contains(searchQuery, ignoreCase = true) // ← ここを追加！
             }
         }
-
-        val dateFiltered = viewModel.filterDate?.let { selectedDate ->
-            searchFiltered.filter {
-                it.date == selectedDate
-            }
-        } ?: searchFiltered
-
+        // 4. 期間
+        val periodFiltered = searchFiltered.filter { lunch ->
+            val after = viewModel.startDateFilter?.let { lunch.date >= it } ?: true
+            val before = viewModel.endDateFilter?.let { lunch.date <= it } ?: true
+            after && before
+        }
+        // 5. 特定日
+        val finalFiltered =
+            viewModel.filterDate?.let { date -> periodFiltered.filter { it.date == date } }
+                ?: periodFiltered
+        // 6. ソート
         when (currentSort) {
-            SortOption.LATEST -> dateFiltered.sortedByDescending { it.id }
-            SortOption.OLDEST -> dateFiltered.sortedBy { it.id }
-            SortOption.NAME -> dateFiltered.sortedBy { it.name }
-            SortOption.RATING -> dateFiltered.sortedByDescending { it.rating }
+            SortOption.LATEST -> finalFiltered.sortedWith(compareByDescending<LunchEntity> { it.date }.thenByDescending { it.id })
+            SortOption.OLDEST -> finalFiltered.sortedWith(compareBy<LunchEntity> { it.date }.thenBy { it.id })
+            SortOption.NAME -> finalFiltered.sortedBy { it.name }
+            SortOption.RATING -> finalFiltered.sortedByDescending { it.rating }
         }
     }
 
@@ -194,10 +204,60 @@ fun MainContent(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // 期間選択のUI（Row）
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                OutlinedButton(onClick = {
+                    val cal = Calendar.getInstance()
+                    viewModel.startDateFilter?.let { cal.timeInMillis = it }
+                    DatePickerDialog(
+                        context,
+                        { _, y, m, d ->
+                            val sel =
+                                Calendar.getInstance().apply { set(y, m, d, 0, 0, 0) }.timeInMillis
+                            viewModel.updateStartDate(sel)
+                        },
+                        cal.get(Calendar.YEAR),
+                        cal.get(Calendar.MONTH),
+                        cal.get(Calendar.DAY_OF_MONTH)
+                    ).show()
+                }, modifier = Modifier.weight(1f)) {
+                    Text(viewModel.startDateFilter?.let { dateFormatter.format(it) } ?: "開始日")
+                }
+                Text("〜")
+                OutlinedButton(onClick = {
+                    val cal = Calendar.getInstance()
+                    viewModel.endDateFilter?.let { cal.timeInMillis = it }
+                    DatePickerDialog(
+                        context,
+                        { _, y, m, d ->
+                            val sel = Calendar.getInstance()
+                                .apply { set(y, m, d, 23, 59, 59) }.timeInMillis
+                            viewModel.updateEndDate(sel)
+                        },
+                        cal.get(Calendar.YEAR),
+                        cal.get(Calendar.MONTH),
+                        cal.get(Calendar.DAY_OF_MONTH)
+                    ).show()
+                }, modifier = Modifier.weight(1f)) {
+                    Text(viewModel.endDateFilter?.let { dateFormatter.format(it) } ?: "終了日")
+                }
+                if (viewModel.startDateFilter != null || viewModel.endDateFilter != null) {
+                    IconButton(onClick = { viewModel.clearPeriodFilter() }) {
+                        Text("×", style = MaterialTheme.typography.titleLarge, color = Color.Gray)
+                    }
+                }
+            }
+
+            // --- B. ジャンル選択 & 並び替え ---
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // ジャンル選択
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
@@ -214,15 +274,14 @@ fun MainContent(
                     ExposedDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }) {
-                        categories.forEach { category ->
+                        categories.forEach { cat ->
                             DropdownMenuItem(
-                                text = { Text(category) },
-                                onClick = { currentCategory = category; expanded = false }
-                            )
+                                text = { Text(cat) },
+                                onClick = { currentCategory = cat; expanded = false })
                         }
                     }
                 }
-
+                // 並び替え
                 ExposedDropdownMenuBox(
                     expanded = sortExpanded,
                     onExpandedChange = { sortExpanded = !sortExpanded },
@@ -239,57 +298,53 @@ fun MainContent(
                     ExposedDropdownMenu(
                         expanded = sortExpanded,
                         onDismissRequest = { sortExpanded = false }) {
-                        SortOption.values().forEach { option ->
+                        SortOption.values().forEach { opt ->
                             DropdownMenuItem(
-                                text = { Text(option.title) },
-                                onClick = { currentSort = option; sortExpanded = false }
-                            )
+                                text = { Text(opt.title) },
+                                onClick = { currentSort = opt; sortExpanded = false })
                         }
                     }
                 }
             }
 
+            // --- C. 検索バー & リアクション ---
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    label = { Text("キーワード検索") },
-                    placeholder = { Text("店名やコメントを入力") },
-                    singleLine = true,
+                    value = searchQuery, onValueChange = { searchQuery = it },
+                    label = { Text("キーワード") }, singleLine = true,
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
-                            Box(
-                                modifier = Modifier.padding(end = 12.dp)
-                                    .clickable { searchQuery = "" }) {
+                            IconButton(onClick = { searchQuery = "" }) {
                                 Text(
-                                    text = "×",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = Color.Gray)
+                                    "×",
+                                    color = Color.Gray
+                                )
                             }
                         }
-                    },
-                    modifier = Modifier.weight(1f)
+                    }, modifier = Modifier.weight(1f)
                 )
 
-                var filterOptions = listOf("すべて", "🔥", "👛", "✨", "🍖")
 
+<<<<<<< HEAD
+=======
+                var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
+
+>>>>>>> 64ee86a05a32e143a69ff32c0b2782761c301f13
                 IconButton(
                     onClick = {
                         val currentIndex = filterOptions.indexOf(currentReactionFilter)
                         val nextIndex = (currentIndex + 1) % filterOptions.size
-                        currentReactionFilter = filterOptions[nextIndex]
+                        currentReactionFilter = (filterOptions[nextIndex])
                     },
                     modifier = Modifier
                         .padding(top = 8.dp) // 上のラベルと高さを揃える
                         .size(56.dp)        // 入力欄と同じ高さ
                 ) {
-                    val isFiltered = currentReactionFilter != "すべて"
+                    val isFiltered =currentReactionFilter != "すべて"
                     Box(
                         contentAlignment = androidx.compose.ui.Alignment.Center,
                         modifier = Modifier
@@ -309,56 +364,63 @@ fun MainContent(
             }
 
 
+
+            // --- D. リスト ---
             if (filteredList.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("見つかりませんでした")
-                }
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) { Text("見つかりませんでした") }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.weight(1f), // 重要：これでUI被りを防ぎます
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                ) {
                     items(filteredList) { lunch ->
-                        LunchCard(lunch = lunch, modifier = Modifier.clickable { onLunchClick(lunch) })
-                        }
+                        LunchCard(
+                            lunch = lunch,
+                            modifier = Modifier.clickable { onLunchClick(lunch) })
                     }
                 }
             }
         }
     }
+}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun LunchDetailContent(
-    viewModel: LunchViewModel,
-    onBack: () -> Unit,
-    onEditClick: () -> Unit
-) {
-    val lunch = viewModel.selectedLunch ?: return
-    val context = LocalContext.current // マップ起動用
 
-    var showMenu by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    var filterHasReaction by remember { mutableStateOf(false) }
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun LunchDetailContent(
+        viewModel: LunchViewModel,
+        onBack: () -> Unit,
+        onEditClick: () -> Unit
+    ) {
+        val lunch = viewModel.selectedLunch ?: return
+        val context = LocalContext.current // マップ起動用
 
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("削除の確認") },
-            text = { Text("「${lunch.name}」を削除しますか？\nこの操作は取り消せません。") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        viewModel.deleteLunch(lunch)
-                        onBack()
+        var showMenu by remember { mutableStateOf(false) }
+        var showDeleteDialog by remember { mutableStateOf(false) }
+
+        var filterHasReaction by remember { mutableStateOf(false) }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("削除の確認") },
+                text = { Text("「${lunch.name}」を削除しますか？\nこの操作は取り消せません。") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            viewModel.deleteLunch(lunch)
+                            onBack()
+                        }
+                    ) {
+                        Text("削除", color = Color.Red)
                     }
-                ) {
-                    Text("削除", color = Color.Red)
-                }
-                            },
+                },
                 dismissButton = {
                     TextButton(onClick = { showDeleteDialog = false }) {
                         Text("キャンセル")
@@ -496,11 +558,18 @@ fun LunchDetailContent(
                     Text(text = lunch.phoneNumber?.ifBlank { "未登録" } ?: "未登録")
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(text = "📅 登録日", style = MaterialTheme.typography.labelLarge, color = Color.Gray)
+                    Text(
+                        text = "📅 登録日",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.Gray
+                    )
 
 // ミリ秒（Long型）を「yyyy年MM月dd日」の文字に変換するロジック
                     val formattedDate = remember(lunch.date) {
-                        val sdf = java.text.SimpleDateFormat("yyyy年MM月dd日", java.util.Locale.getDefault())
+                        val sdf = java.text.SimpleDateFormat(
+                            "yyyy年MM月dd日",
+                            java.util.Locale.getDefault()
+                        )
                         sdf.format(java.util.Date(lunch.date))
                     }
 
@@ -515,62 +584,89 @@ fun LunchDetailContent(
             }
         }
     }
+<<<<<<< HEAD
 
-    @Composable
-    fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column {
-                Image(
-                    painter = rememberAsyncImagePainter(lunch.photoUrl),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(180.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Column(modifier = Modifier.padding(16.dp)) {
+=======
+
+
+@Composable
+fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
+    val filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column {
+            Image(
+                painter = rememberAsyncImagePainter(lunch.photoUrl),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = lunch.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+>>>>>>> 64ee86a05a32e143a69ff32c0b2782761c301f13
+
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        modifier = Modifier.wrapContentWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
                     ) {
+<<<<<<< HEAD
                         Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
+=======
 
-                        Row(
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
-                        ) {
-                            Badge { Text(lunch.category) }
+                        Badge { Text(lunch.category) }
 
-                            if (lunch.reactions.isNotEmpty()) {
-                                Text(
-                                    text = lunch.reactions.joinToString(" "),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
+
+                        if (lunch.reactions.isNotEmpty()) {
+                            val sortedReactions = lunch.reactions.sortedBy { emoji ->
+                                val index = filterOptions.indexOf(emoji.toString())
+                                if (index == -1) 999 else index // リストにない文字は後ろに回す
                             }
-                        }
-                    }
-
-
-                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                        repeat(5) { index ->
-                            Icon(
-                                imageVector = Icons.Filled.Star,
-                                contentDescription = null,
-                                tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
-                                modifier = Modifier.size(18.dp)
+                            Text(
+                                text = sortedReactions.joinToString(" "),
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
+>>>>>>> 64ee86a05a32e143a69ff32c0b2782761c301f13
                     }
-                    Text(
-                        text = lunch.comment,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.DarkGray
-                    )
                 }
+
+
+                Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                    repeat(5) { index ->
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = lunch.comment,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
+                )
             }
         }
     }
+<<<<<<< HEAD
+
+
+=======
+}
+>>>>>>> 64ee86a05a32e143a69ff32c0b2782761c301f13
 

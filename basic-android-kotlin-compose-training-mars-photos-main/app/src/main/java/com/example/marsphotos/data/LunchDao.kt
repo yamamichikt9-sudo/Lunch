@@ -6,7 +6,6 @@ import androidx.room.Query
 import androidx.room.Update
 import androidx.room.Delete
 import kotlinx.coroutines.flow.Flow
-
 @Dao
 interface LunchDao {
     @Query("SELECT * FROM lunch_table ORDER BY `date` DESC")
