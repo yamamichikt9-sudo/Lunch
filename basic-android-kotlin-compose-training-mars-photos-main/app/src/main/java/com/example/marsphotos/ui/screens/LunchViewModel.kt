@@ -197,10 +197,7 @@ class LunchViewModel(
         ratingInput = lunch.rating
         commentInput = lunch.comment
         photoUriInput = lunch.photoUrl
-<<<<<<< HEAD
         dateInput = lunch.date
-=======
->>>>>>> 531436ecab80caa2fbd4ab16a374a80b5107bf0b
         reactionsInput = lunch.reactions
     }
 
@@ -213,10 +210,7 @@ class LunchViewModel(
         ratingInput = 0f
         commentInput = ""
         photoUriInput = null
-<<<<<<< HEAD
         dateInput = System.currentTimeMillis()
-=======
->>>>>>> 531436ecab80caa2fbd4ab16a374a80b5107bf0b
         reactionsInput = emptyList()
     }
 
