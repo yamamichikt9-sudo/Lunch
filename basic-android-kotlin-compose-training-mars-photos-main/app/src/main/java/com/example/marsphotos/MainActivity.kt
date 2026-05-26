@@ -38,7 +38,6 @@ import com.example.marsphotos.ui.CalendarScreen
 import java.util.Calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import com.example.marsphotos.ui.components.LunchCard
 
 
 class MainActivity : ComponentActivity() {
@@ -153,9 +152,12 @@ fun MainContent(
             if (currentCategory == "すべて") viewModel.lunchList else viewModel.lunchList.filter { it.category == currentCategory }
         // 2. リアクション
         val reactFiltered =
-            if (currentReactionFilter == "すべて") catFiltered else catFiltered.filter {
-                it.reactions.contains(currentReactionFilter)
-            }
+            if (currentReactionFilter == "すべて") {
+                catFiltered
+            }else{
+                    catFiltered.filter {lunch -> lunch.reactions.contains(currentReactionFilter) }
+                }
+
         // 3. 検索
         val searchFiltered = if (searchQuery.isBlank()) {
             reactFiltered
@@ -327,28 +329,41 @@ fun MainContent(
                 )
 
 
+<<<<<<< HEAD
+=======
+                var filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
+
+>>>>>>> 64ee86a05a32e143a69ff32c0b2782761c301f13
                 IconButton(
                     onClick = {
-                        val nextIdx =
-                            (filterOptions.indexOf(currentReactionFilter) + 1) % filterOptions.size
-                        currentReactionFilter = filterOptions[nextIdx]
+                        val currentIndex = filterOptions.indexOf(currentReactionFilter)
+                        val nextIndex = (currentIndex + 1) % filterOptions.size
+                        currentReactionFilter = (filterOptions[nextIndex])
                     },
-                    modifier = Modifier.size(56.dp).padding(top = 8.dp)
+                    modifier = Modifier
+                        .padding(top = 8.dp) // 上のラベルと高さを揃える
+                        .size(56.dp)        // 入力欄と同じ高さ
                 ) {
-                    val isFiltered = currentReactionFilter != "すべて"
+                    val isFiltered =currentReactionFilter != "すべて"
                     Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize().background(
-                            color = if (isFiltered) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.6f
-                            ),
-                            shape = MaterialTheme.shapes.small
-                        )
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                color = if (isFiltered) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                shape = MaterialTheme.shapes.small
+                            )
                     ) {
-                        Text(if (isFiltered) currentReactionFilter else "🍚")
+                        Text(
+                            text = if (isFiltered) currentReactionFilter else "🍚",
+                            style = MaterialTheme.typography.titleLarge
+                        )
                     }
                 }
             }
+
+
 
             // --- D. リスト ---
             if (filteredList.isEmpty()) {
@@ -569,34 +584,89 @@ fun MainContent(
             }
         }
     }
+<<<<<<< HEAD
+
+=======
 
 
-    @Composable
-    fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Column {
-                Image(
-                    painter = rememberAsyncImagePainter(lunch.photoUrl),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(180.dp),
-                    contentScale = ContentScale.Crop
-                )
-                Column(modifier = Modifier.padding(16.dp)) {
+@Composable
+fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
+    val filterOptions = listOf("すべて", "💖", "👛", "✨", "🍖", "🍀", "⚡️", "💔", "💸", "⏳", "😖")
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column {
+            Image(
+                painter = rememberAsyncImagePainter(lunch.photoUrl),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = lunch.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+>>>>>>> 64ee86a05a32e143a69ff32c0b2782761c301f13
+
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        modifier = Modifier.wrapContentWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp) // 👈 バッジと絵文字の間の隙間
                     ) {
+<<<<<<< HEAD
                         Text(text = lunch.name, style = MaterialTheme.typography.titleLarge)
+=======
+
+                        Badge { Text(lunch.category) }
+
+
+                        if (lunch.reactions.isNotEmpty()) {
+                            val sortedReactions = lunch.reactions.sortedBy { emoji ->
+                                val index = filterOptions.indexOf(emoji.toString())
+                                if (index == -1) 999 else index // リストにない文字は後ろに回す
+                            }
+                            Text(
+                                text = sortedReactions.joinToString(" "),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+>>>>>>> 64ee86a05a32e143a69ff32c0b2782761c301f13
                     }
                 }
+
+
+                Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                    repeat(5) { index ->
+                        Icon(
+                            imageVector = Icons.Filled.Star,
+                            contentDescription = null,
+                            tint = if (index < lunch.rating) Color(0xFFFFC107) else Color.LightGray,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = lunch.comment,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray
+                )
             }
         }
     }
+<<<<<<< HEAD
 
 
+=======
+}
+>>>>>>> 64ee86a05a32e143a69ff32c0b2782761c301f13
 
