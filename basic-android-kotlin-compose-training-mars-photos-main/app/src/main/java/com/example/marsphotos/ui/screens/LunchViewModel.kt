@@ -18,14 +18,12 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
+
 class LunchViewModel(
     private val lunchesRepository: LunchesRepository
 ) : ViewModel() {
 
     // --- 入力フォームの状態 ---
-    // 💡 外部（ダイアログ選択時など）から自動入力できるように private set を外しました！
     var nameInput by mutableStateOf("")
     var addressInput by mutableStateOf("")
     var phoneNumberInput by mutableStateOf("")
@@ -43,6 +41,7 @@ class LunchViewModel(
     private val _filterDate = mutableStateOf<Long?>(null)
     val filterDate: Long?
         get() = _filterDate.value
+
     fun setFilterDate(date: Long?) {
         _filterDate.value = date
     }
@@ -53,17 +52,14 @@ class LunchViewModel(
     var endDateFilter by mutableStateOf<Long?>(null)
         private set
 
-    // 開始日を更新する関数
     fun updateStartDate(date: Long?) {
         startDateFilter = date
     }
 
-    // 終了日を更新する関数
     fun updateEndDate(date: Long?) {
         endDateFilter = date
     }
 
-    // 期間フィルターをリセットする関数
     fun clearPeriodFilter() {
         startDateFilter = null
         endDateFilter = null
@@ -75,13 +71,15 @@ class LunchViewModel(
     var searchCandidates = mutableStateListOf<com.example.marsphotos.data.ShopSearchItem>()
         private set
 
-    // ❓ お店が見つからなかったときに、救済ダイアログを表示するためのフラグ（重複を削除してここに集約！）
     var showNoResultDialog by mutableStateOf(false)
         private set
 
-
     // --- データのリスト ---
     val lunchList = mutableStateListOf<LunchEntity>()
+
+    // 🪙 コインアニメーションダイアログを表示するためのフラグ
+    var showCoinAnimation by mutableStateOf(false)
+        private set
 
     init {
         viewModelScope.launch {
@@ -125,56 +123,46 @@ class LunchViewModel(
                 val response = ShopApi.retrofitService.searchShop(keyword = trimmedKeyword)
 
                 if (response.isNotEmpty()) {
-                    // 💡 【ここを強化！】
-                    // ユーザーが入力した文字（例：日野市）が、住所（displayName）の中に
-                    // 含まれているものを一番上（trueが先）に持ってくるように自動で並び替える！
                     val sortedList = response.sortedByDescending { item ->
-                        // 入力されたキーワードの一部分（地名など）が住所に含まれているか判定
-                        // 全体の店名だと一致しにくいので、スペースで区切られた単語が含まれているかでチェックすると賢いです
                         trimmedKeyword.split(" ", " ").any { word ->
                             item.displayName.contains(word)
                         }
                     }
-
                     searchCandidates.addAll(sortedList)
                 } else {
                     android.widget.Toast.makeText(
                         context,
-                        "自動入力できませんでした。手動で入力してください。",
+                        "自動入力できませんでした。右側の 🌐 ボタンをお試しください。",
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
             } catch (e: Exception) {
                 android.widget.Toast.makeText(
                     context,
-                    "自動入力できませんでした。手動で入力してください。",
+                    "通信エラーが発生しました。手動で入力するか 🌐 ボタンをお試しください。",
                     android.widget.Toast.LENGTH_LONG
                 ).show()
             }
         }
     }
 
-    // 救済ダイアログを閉じるための関数
     fun dismissNoResultDialog() {
         showNoResultDialog = false
     }
 
     // ユーザーが候補の中から「この店！」と選んだときに呼び出す関数
     fun selectCandidate(item: com.example.marsphotos.data.ShopSearchItem) {
-        // ① 選ばれたお店の正式名称と住所をそのまま住所欄へ
         addressInput = item.displayName
 
-        // ② 電話番号を取り出して入力
+        // 📞 【電話番号対策！】データが空っぽなら親切なガイド文字を入れる
         val telNumber = item.extratags?.phone
             ?: item.extratags?.contactPhone
-            ?: ""
+            ?: "（データなし：手動で入力してください）"
         phoneNumberInput = telNumber
 
-        // ③ 用が済んだので、候補リストを空にしてダイアログを自動で閉じさせる
         searchCandidates.clear()
     }
 
-    // ダイアログをキャンセルした時に候補リストをクリアする用
     fun clearCandidates() {
         searchCandidates.clear()
     }
@@ -187,7 +175,6 @@ class LunchViewModel(
         selectedLunch = null
     }
 
-    // 編集ボタンを押したときに、今のデータを入力欄にセットする関数
     fun prepareEdit(lunch: LunchEntity) {
         editingLunchId = lunch.id
         nameInput = lunch.name
@@ -201,7 +188,6 @@ class LunchViewModel(
         reactionsInput = lunch.reactions
     }
 
-    // 入力フィールドを空にする
     private fun resetInputs() {
         nameInput = ""
         addressInput = ""
@@ -215,7 +201,7 @@ class LunchViewModel(
     }
 
     // --- DB操作 ---
-    fun saveLunch() {
+    fun saveLunch(context: android.content.Context, onSaveComplete: () -> Unit) {
         if (!canSave) return
 
         val lunch = LunchEntity(
@@ -234,13 +220,51 @@ class LunchViewModel(
         viewModelScope.launch {
             if (editingLunchId == null) {
                 lunchesRepository.insertLunch(lunch)
+
+                // 🔒 1日1回判定
+                val todayStr = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(java.util.Date())
+                val prefs = context.getSharedPreferences("lunch_point_prefs", android.content.Context.MODE_PRIVATE)
+                val lastCheckedDate = prefs.getString("last_point_date", "")
+
+                if (lastCheckedDate == todayStr) {
+                    // ⚠️ 2回目以降：トーストを出してスマートにメイン画面へ戻る
+                    android.widget.Toast.makeText(context, "本日のポイントは獲得済みです", android.widget.Toast.LENGTH_SHORT).show()
+                    resetInputs()
+                    onSaveComplete()
+                } else {
+                    // 🎉 初めての登録：ポイントを足してアニメーション開始！
+                    prefs.edit().putString("last_point_date", todayStr).apply()
+
+                    val currentCount = prefs.getInt("total_bonus_points", 0)
+                    prefs.edit().putInt("total_bonus_points", currentCount + 100).apply()
+
+                    // アニメーションダイアログを表示
+                    showCoinAnimation = true
+                }
+
             } else {
                 lunchesRepository.updateLunch(lunch)
+                resetInputs()
+                editingLunchId = null
+                onSaveComplete()
             }
-
-            resetInputs()
-            editingLunchId = null
         }
+    }
+
+    // 🪙 画面に表示する合計ポイントの計算
+    fun getTotalPoints(context: android.content.Context): Int {
+        val prefs = context.getSharedPreferences("lunch_point_prefs", android.content.Context.MODE_PRIVATE)
+        return prefs.getInt("total_bonus_points", 0)
+    }
+
+    // 🎉 ボタンを押したときに、満を持してメイン画面へ戻る処理
+    fun completeCoinAnimation(onSaveComplete: () -> Unit) {
+        showCoinAnimation = false // ダイアログを閉じる
+        resetInputs()             // 入力内容をリセット
+        editingLunchId = null     // 編集IDクリア
+
+        // ✨ 確実に画面を戻します！
+        onSaveComplete()
     }
 
     fun deleteLunch(lunch: LunchEntity) {

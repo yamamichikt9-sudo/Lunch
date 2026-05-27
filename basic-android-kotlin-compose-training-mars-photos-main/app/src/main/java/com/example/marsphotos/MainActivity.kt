@@ -141,7 +141,7 @@ fun MainContent(
         currentReactionFilter,
         searchQuery,
         currentSort,
-        viewModel.lunchList.size,
+        viewModel.lunchList.toList(),
         viewModel.filterDate,
         viewModel.startDateFilter,
         viewModel.endDateFilter
@@ -187,7 +187,38 @@ fun MainContent(
     }
 
     Scaffold(
-        topBar = { CenterAlignedTopAppBar(title = { Text("ランチログ") }) },
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("ランチログ", style = MaterialTheme.typography.titleLarge)
+
+                        // 🪙 右端にカッコよくポイントカウンターを表示！
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(50.dp) // 丸パッチ風に
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text("🪙", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = "${viewModel.getTotalPoints(context)} LP",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             Row {
                 FloatingActionButton(
@@ -617,7 +648,6 @@ fun LunchCard(lunch: LunchEntity, modifier: Modifier = Modifier) {
                         }
                     }
                 }
-
                 Row(modifier = Modifier.padding(vertical = 4.dp)) {
                     repeat(5) { index ->
                         Icon(

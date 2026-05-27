@@ -1,53 +1,57 @@
 package com.example.marsphotos.ui
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
-import com.example.marsphotos.ui.screens.LunchViewModel
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.ui.draw.scale
 import android.app.DatePickerDialog
-import androidx.compose.foundation.layout.Arrangement
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
-import androidx.compose.foundation.background
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-
-
-
+import coil.compose.rememberAsyncImagePainter
+import com.example.marsphotos.ui.screens.LunchViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    var selectedReactions: Set<String> by remember { mutableStateOf(viewModel.reactionsInput.toSet()) }
+    // 💡 エラーの原因だったリアクションの状態管理を、一番安全な「.value」形式で定義します
+    val selectedReactions = remember { mutableStateOf(viewModel.reactionsInput.toSet()) }
+
     // --- ダイアログの状態管理 ---
     var showConfirmDialog by remember { mutableStateOf(false) }
 
@@ -79,8 +83,8 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
-    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
     ) { uri: android.net.Uri? ->
         uri?.let { viewModel.updatePhoto(it.toString()) }
     }
@@ -102,10 +106,17 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                             viewModel.updatePhoto(permanentUri)
                         }
 
-                        viewModel.updateReactions(selectedReactions.toList())
+                        // リアクションの確定
+                        viewModel.updateReactions(selectedReactions.value.toList())
 
-                        viewModel.saveLunch()
-                        onBack()
+                        // 💡 【ここを修正！】
+                        // 編集のときも新規登録のときも、終わったらしっかり「onBack」を実行するように
+                        // どちらにも「onSaveComplete = onBack」を渡してあげます！
+                        if (isEdit) {
+                            viewModel.saveLunch(context = context, onSaveComplete = onBack)
+                        } else {
+                            viewModel.saveLunch(context = context, onSaveComplete = onBack)
+                        }
                     }
                 ) {
                     Text(confirmButtonText)
@@ -119,7 +130,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
         )
     }
 
-    // 👇 ここから「店舗候補選択ダイアログ」を新しく追加 👇
+    // --- 店舗候補選択ダイアログ ---
     if (viewModel.searchCandidates.isNotEmpty()) {
         AlertDialog(
             onDismissRequest = { viewModel.clearCandidates() },
@@ -130,7 +141,6 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 )
             },
             text = {
-                // 候補が最大5件並ぶリストを作成
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -142,7 +152,6 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    // タップされたお店の情報を入力欄に流し込む！
                                     viewModel.selectCandidate(item)
                                 },
                             shape = MaterialTheme.shapes.medium,
@@ -151,7 +160,6 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                             Column(
                                 modifier = Modifier.padding(12.dp)
                             ) {
-                                // 住所データは長いので、見やすくなるようにテキストで配置
                                 Text(
                                     text = item.displayName,
                                     style = MaterialTheme.typography.bodyMedium,
@@ -162,7 +170,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                     }
                 }
             },
-            confirmButton = {}, // 選択肢をタップして確定させるため、確定ボタンは空っぽでOK
+            confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { viewModel.clearCandidates() }) {
                     Text("キャンセル")
@@ -170,7 +178,105 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
             }
         )
     }
-    // 👆 ここまでを追加 👆
+
+    // 🪙 --- 100LP獲得！貯金箱アニメーションダイアログ ---
+    if (viewModel.showCoinAnimation) {
+        var startAnimation by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            startAnimation = true
+        }
+
+        val coinOffsetY by animateFloatAsState(
+            targetValue = if (startAnimation) 40f else -150f,
+            animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
+            label = "CoinDrop"
+        )
+
+        val coinAlpha by animateFloatAsState(
+            targetValue = if (coinOffsetY >= 30f) 0f else 1f,
+            animationSpec = tween(durationMillis = 100),
+            label = "CoinAlpha"
+        )
+
+        val pigScale by animateFloatAsState(
+            targetValue = if (coinOffsetY >= 20f) {
+                if (coinOffsetY >= 35f) 1.0f else 1.3f
+            } else {
+                1.0f
+            },
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            ),
+            label = "PigScale"
+        )
+
+        AlertDialog(
+            onDismissRequest = { /* アニメーション中は閉じさせない */ },
+            title = null,
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "登録ありがとう！",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "🪙 +100 LP 獲得！",
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(180.dp))
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(200.dp)
+                    ) {
+                        Text(
+                            text = "🪙",
+                            style = MaterialTheme.typography.displayMedium,
+                            modifier = Modifier
+                                .offset(y = coinOffsetY.dp)
+                                .graphicsLayer(alpha = coinAlpha)
+                        )
+
+                        Text(
+                            text = "🐖",
+                            style = MaterialTheme.typography.displayLarge,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .graphicsLayer(
+                                    scaleX = pigScale,
+                                    scaleY = pigScale
+                                )
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = {
+                            viewModel.completeCoinAnimation(onSaveComplete = onBack)
+                        }
+                    ) {
+                        Text("ポイントを受け取る")
+                    }
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -183,11 +289,10 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 }
             )
         },
-        // ★ ここを追加：ボタンを画面下部に固定
         bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                tonalElevation = 2.dp, // ほんのり色をつけて境界をわかりやすく
+                tonalElevation = 2.dp,
                 shadowElevation = 8.dp
             ) {
                 Button(
@@ -195,7 +300,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                     enabled = viewModel.canSave,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp) // ボタンの周りに余白
+                        .padding(16.dp)
                 ) {
                     Text(confirmButtonText)
                 }
@@ -210,7 +315,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp)) // 上に少し余裕
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = if (isEdit) "ランチ編集" else "ランチ登録",
@@ -249,18 +354,16 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                         Text(
                             text = " *必須",
                             color = Color.Red,
-                            style = MaterialTheme.typography.bodySmall // 少し小さくするとバランスが良いです
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // ✨ 新しい全自動入力ボタン（コメント欄を汚さない安全版）
             Spacer(modifier = Modifier.height(4.dp))
             Button(
                 onClick = {
-                    // 💡 画面の context をそのまま関数にパスしてあげることで、トーストが鳴らせます
                     viewModel.searchAndAutoFillShop(context)
                 },
                 enabled = viewModel.nameInput.isNotBlank(),
@@ -278,7 +381,23 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 onValueChange = { viewModel.updateAddress(it) },
                 label = { Text("住所") },
                 placeholder = { Text("例：東京都千代田区...") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (viewModel.nameInput.isNotBlank()) {
+                                val encodedName = java.net.URLEncoder.encode(viewModel.nameInput, "UTF-8")
+                                val intent = android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse("https://www.google.com/maps/search/?api=1&query=$encodedName")
+                                )
+                                context.startActivity(intent)
+                            }
+                        }
+                    ) {
+                        Text("🌐", fontSize = 20.sp)
+                    }
+                }
             )
 
             OutlinedTextField(
@@ -330,7 +449,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                 Text(text = "来店日: $formattedDate")
             }
 
-            // --- 評価（アニメーション付き） ---
+            // --- 評価 ---
             Text("評価")
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 var lastSelectedStar by remember { mutableStateOf(-1) }
@@ -339,9 +458,9 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                     val starTargetScale = if (lastSelectedStar == i) 1.3f else 1.0f
                     val scale by animateFloatAsState(
                         targetValue = starTargetScale,
-                        animationSpec = androidx.compose.animation.core.spring(
-                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
                         ),
                         finishedListener = { if (lastSelectedStar == i) lastSelectedStar = -1 }
                     )
@@ -375,18 +494,20 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
 
             var isReactionExpanded by remember { mutableStateOf(false) }
 
-
             OutlinedButton(
                 onClick = { isReactionExpanded = !isReactionExpanded },
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 8.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(text = if (isReactionExpanded) "リアクション一覧を閉じる" else "🍚リアクションを追加",
-                    fontSize = 16.sp
+                    Text(
+                        text = if (isReactionExpanded) "リアクション一覧を閉じる" else "🍚リアクションを追加",
+                        fontSize = 16.sp
                     )
 
                     Icon(
@@ -396,7 +517,6 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                     )
                 }
             }
-
 
             AnimatedVisibility(
                 visible = isReactionExpanded,
@@ -422,26 +542,23 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
                         "😖" to "口に合わない"
                     )
 
-
-                    // Goodのボックスを表示する命令
                     ReactionSection(
                         title = "Good 👍",
                         reactions = goodReactions,
-                        selectedReactions = selectedReactions,
+                        selectedReactions = selectedReactions.value,
                         onReactionChange = { emoji, isSelected ->
-                            selectedReactions =
-                                if (isSelected) selectedReactions + emoji else selectedReactions - emoji
+                            selectedReactions.value =
+                                if (isSelected) selectedReactions.value + emoji else selectedReactions.value - emoji
                         }
                     )
 
-                    // Badのボックスを表示する命令
                     ReactionSection(
                         title = "Bad 👎",
                         reactions = badReactions,
-                        selectedReactions = selectedReactions,
+                        selectedReactions = selectedReactions.value,
                         onReactionChange = { emoji, isSelected ->
-                            selectedReactions =
-                                if (isSelected) selectedReactions + emoji else selectedReactions - emoji
+                            selectedReactions.value =
+                                if (isSelected) selectedReactions.value + emoji else selectedReactions.value - emoji
                         }
                     )
                 }
@@ -451,7 +568,7 @@ fun AddLunchScreen(viewModel: LunchViewModel, onBack: () -> Unit) {
     }
 }
 
-
+// 💡 ファイルの末尾に、定義が迷子になっていた ReactionSection を完全結合！
 @Composable
 fun ReactionSection(
     title: String,
@@ -466,7 +583,6 @@ fun ReactionSection(
             modifier = Modifier.padding(bottom = 6.dp, start = 4.dp)
         )
 
-        // 四角い枠のボックス
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -475,7 +591,6 @@ fun ReactionSection(
                 .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // 元々の chunked(2) を使用した安全な配置
             reactions.chunked(2).forEach { rowItems ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -527,5 +642,3 @@ fun ReactionSection(
         }
     }
 }
-
-
